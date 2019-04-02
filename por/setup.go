@@ -18,7 +18,7 @@ type EncodedDataset struct {
 	numParityShards int
 }
 
-// CreateErasureCoding create a maximum distance separable code for a dataset
+// CreateErasureCoding creates a maximum distance separable code for a dataset
 // into n = r * f segments, such that any f segments can reconstruct the
 // dataset. The input slice is operated on directly. An error is returned if the
 // top slice of data does not have length equal to n, or if n is zero, negative,
@@ -113,9 +113,11 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 		dataset.numDataShards, dataset.numParityShards}, nil
 }
 
-// ReconstructDataFromSegments takes in a slice of EncodedDatasets and restores them into the
-// original data. Note that the datasets must contain all the shards of the
-// original data, or else an error is thrown.
-func ReconstructDataFromSegments(datasets []EncodedDataset) ([][]byte, error) {
+// ReconstructDataFromSegments takes in a slice of EncodedDatasets and restores
+// them into the original data. Note that the datasets must contain at least f
+// segments of the original data in the correct order, or else an error is
+// thrown. An error is also thrown if a hash does not verify for a given
+// segment.
+func ReconstructDataFromSegments(datasets []*EncodedDataset) ([][]byte, error) {
 	return nil, nil
 }
