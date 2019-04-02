@@ -3,6 +3,7 @@ package por
 import (
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"github.com/klauspost/reedsolomon"
 )
 
@@ -10,7 +11,7 @@ import (
 // shard.
 type EncodedDataset struct {
 	shards          [][]byte
-	hashes          [][sha256.Size]byte
+	hashes          [][]byte
 	ordering        []int
 	numDataShards   int
 	numParityShards int
@@ -64,11 +65,12 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 		return nil, err
 	}
 
-	hashes := make([][sha256.Size]byte, numDataShards+numParityShards)
+	hashes := make([][]byte, numDataShards+numParityShards)
 	ordering := make([]int, numDataShards+numParityShards)
 
 	for i, shard := range shards {
-		hashes[i] = sha256.Sum256(shard)
+		hashValue := sha256.Sum256(shard)
+		hashes[i] = hashValue[:]
 		ordering[i] = i
 	}
 
@@ -77,16 +79,32 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 	return result, nil
 }
 
-// SelectSegements selects the specified subset of shards from a larger dataset
+// SelectSegments selects the specified subset of shards from a larger dataset
 // and returns that subset as a new EncodedDataset. An error is returned if the
 // subset is invalid for the dataset, or if the hashes of the shards of the
 // dataset are invalid.
 func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, error) {
+	if len(subset) > len(dataset.shards) {
+		return nil, fmt.Errorf("cannot select subset of size %v from set of %v shards",
+			len(subset), len(dataset.shards))
+	}
+	subShards := make([][]byte, len(subset))
+	subHashes := make([][]byte, len(subset))
+	subOrdering := make([]int, len(subset))
 
-	return nil, nil
+	for i, index := range subset {
+		subShards[i] = make([]byte, len(dataset.shards[index]))
+		copy(subShards[i], dataset.shards[index])
+		subHashes[i] = make([]byte, len(dataset.hashes[index]))
+		copy(subHashes[i], dataset.hashes[index])
+		subOrdering[i] = dataset.ordering[index]
+	}
+
+	return &EncodedDataset{subShards, subHashes, subOrdering,
+		dataset.numDataShards, dataset.numParityShards}, nil
 }
 
-// ReconstructDataFromSegements takes in a slice of EncodedDatasets and restores them into the
+// ReconstructDataFromSegments takes in a slice of EncodedDatasets and restores them into the
 // original data. Note that the datasets must contain all the shards of the
 // original data, or else an error is thrown.
 func ReconstructDataFromSegments(datasets []EncodedDataset) ([][]byte, error) {
