@@ -72,6 +72,31 @@ func TestSelectSegments(t *testing.T) {
 		// t.Logf("subset of length %v created", len(subsetEncoding.shards))
 	}
 
+	// Test incorrect segments
+	subset = []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	_, err = SelectSegments(encoding, subset)
+	if err == nil {
+		t.Errorf("subset of size %v has selected from 16 segments", len(subset))
+	} else {
+		// t.Log(err)
+	}
+
+	subset = subset[15:17]
+	_, err = SelectSegments(encoding, subset)
+	if err == nil {
+		t.Errorf("allowed out-of-index subset 16 for set of size %v", len(subset))
+	} else {
+		// t.Log(err)
+	}
+
+	encoding.shards[15][0]++
+	subset = subset[0:1]
+	_, err = SelectSegments(encoding, subset)
+	if err == nil {
+		t.Error("hash of shard 0 matches modified dataset")
+	} else {
+		// t.Log(err)
+	}
 }
 
 func TestReconstructDataFromSegments(t *testing.T) {

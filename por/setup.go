@@ -1,6 +1,7 @@
 package por
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -93,9 +94,17 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 	subOrdering := make([]int, len(subset))
 
 	for i, index := range subset {
+		if index >= len(dataset.shards) {
+			return nil, fmt.Errorf("cannot select index %v from set of %v shards",
+				index, len(dataset.shards))
+		}
 		subShards[i] = make([]byte, len(dataset.shards[index]))
 		copy(subShards[i], dataset.shards[index])
 		subHashes[i] = make([]byte, len(dataset.hashes[index]))
+		shardHash := sha256.Sum256(subShards[i])
+		if !bytes.Equal(shardHash[:], dataset.hashes[index]) {
+			return nil, fmt.Errorf("hash of shard %v does not match dataset", index)
+		}
 		copy(subHashes[i], dataset.hashes[index])
 		subOrdering[i] = dataset.ordering[index]
 	}
