@@ -102,7 +102,9 @@ func TestSelectSegments(t *testing.T) {
 func TestReconstructDataFromSegments(t *testing.T) {
 	// Testing correct recovery of full dataset
 	// Testing correct recovery of segmented dataset
+	// Testing incorrect recovery - no datasets passed
 	// Testing incorrect recovery - wrong number of shards
+	// Testing incorrect recovery - inconsistent number of shards
 	// Testing incorrect recovery - not enough shards
 	// Testing incorrect recovery - wrong order
 	// Testing incorrect recovery - wrong hashes

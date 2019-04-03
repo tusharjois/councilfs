@@ -119,5 +119,41 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 // thrown. An error is also thrown if a hash does not verify for a given
 // segment.
 func ReconstructDataFromSegments(datasets []*EncodedDataset) ([][]byte, error) {
+	if len(datasets) == 0 {
+		return nil, fmt.Errorf("no datasets passed")
+	}
+	rShards := make([][]byte, len(datasets[0].shards))
+	orderMap := make(map[int][]byte)
+	numDataShards := datasets[0].numDataShards
+	numParityShards := datasets[0].numParityShards
+
+	for idx, encoding := range datasets {
+		if numDataShards != encoding.numDataShards {
+			return nil, fmt.Errorf("inconsistent numDataShards %v for dataset %v",
+				encoding.numDataShards, idx)
+		}
+		if numParityShards != encoding.numParityShards {
+			return nil, fmt.Errorf("inconsistent numParityShards %v for dataset %v",
+				encoding.numParityShards, idx)
+		}
+
+		for _, o := range encoding.ordering {
+			if o > len(encoding.shards) {
+				return nil, fmt.Errorf("attempting to index %v into dataset of length %v",
+					o, len(encoding.shards))
+			}
+			// TODO: Do more complex conflict resolution than this
+			if hash, present := orderMap[o]; present {
+				shardHash := sha256.Sum256(encoding.shards[o])
+				if !bytes.Equal(shardHash[:], encoding.hashes[idx]) {
+					return nil, fmt.Errorf("hash of shard %v in dataset %v does not match dataset",
+						o, idx)
+				}
+			}
+
+		}
+
+	}
+
 	return nil, nil
 }
