@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klauspost/reedsolomon"
+	"math"
 )
 
 // EncodedDataset contains the shards of a dataset and the associated hash for each
@@ -16,6 +17,7 @@ type EncodedDataset struct {
 	ordering        []int
 	numDataShards   int
 	numParityShards int
+	originalLen     int
 }
 
 // CreateErasureCoding creates a maximum distance separable code for a dataset
@@ -33,7 +35,7 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 	}
 
 	numParityShards := numDataShards - f
-	shardLen := len(dataset) / numDataShards
+	shardLen := int(math.Ceil(float64(len(dataset)) / float64(numDataShards)))
 	if shardLen <= 0 { // there's not enough data to have this many shards
 		return nil, errors.New("dataset too small to support this many segments")
 	}
@@ -49,6 +51,10 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 			shards[i] = toShard[startOffset:endOffset]
 		} else {
 			shards[i] = toShard[startOffset:len(toShard)]
+			// Pad to make sure we can run a proper erasure coding
+			for j := len(toShard); j < endOffset; j++ {
+				shards[i] = append(shards[i], 0)
+			}
 		}
 	}
 
@@ -75,7 +81,7 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 		ordering[i] = i
 	}
 
-	result := &EncodedDataset{shards, hashes, ordering, numDataShards, numParityShards}
+	result := &EncodedDataset{shards, hashes, ordering, numDataShards, numParityShards, len(dataset)}
 
 	return result, nil
 }
@@ -110,7 +116,7 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 	}
 
 	return &EncodedDataset{subShards, subHashes, subOrdering,
-		dataset.numDataShards, dataset.numParityShards}, nil
+		dataset.numDataShards, dataset.numParityShards, dataset.originalLen}, nil
 }
 
 // ReconstructDataFromSegments takes in a slice of EncodedDatasets and restores
@@ -118,7 +124,7 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 // segments of the original data in the correct order, or else an error is
 // thrown. An error is also thrown if a hash does not verify for a given
 // segment.
-func ReconstructDataFromSegments(datasets []*EncodedDataset) ([][]byte, error) {
+func ReconstructDataFromSegments(datasets []*EncodedDataset) ([]byte, error) {
 	if len(datasets) == 0 {
 		return nil, fmt.Errorf("no datasets passed")
 	}
@@ -126,6 +132,7 @@ func ReconstructDataFromSegments(datasets []*EncodedDataset) ([][]byte, error) {
 	orderMap := make(map[int][]byte)
 	numDataShards := datasets[0].numDataShards
 	numParityShards := datasets[0].numParityShards
+	originalLen := datasets[0].originalLen
 
 	for idx, encoding := range datasets {
 		if numDataShards != encoding.numDataShards {
@@ -136,24 +143,46 @@ func ReconstructDataFromSegments(datasets []*EncodedDataset) ([][]byte, error) {
 			return nil, fmt.Errorf("inconsistent numParityShards %v for dataset %v",
 				encoding.numParityShards, idx)
 		}
+		if originalLen != encoding.originalLen {
+			return nil, fmt.Errorf("inconsistent originalLen %v for dataset %v",
+				encoding.originalLen, idx)
+		}
 
-		for _, o := range encoding.ordering {
-			if o > len(encoding.shards) {
+		for i, o := range encoding.ordering {
+			if o > (numDataShards + numParityShards) {
 				return nil, fmt.Errorf("attempting to index %v into dataset of length %v",
-					o, len(encoding.shards))
+					o, numDataShards+numParityShards)
+			}
+			shardHash := sha256.Sum256(encoding.shards[i])
+			if !bytes.Equal(shardHash[:], encoding.hashes[i]) {
+				return nil, fmt.Errorf("hash of shard %v in dataset %v does not match dataset",
+					o, idx)
 			}
 			// TODO: Do more complex conflict resolution than this
 			if hash, present := orderMap[o]; present {
-				shardHash := sha256.Sum256(encoding.shards[o])
-				if !bytes.Equal(shardHash[:], encoding.hashes[idx]) {
-					return nil, fmt.Errorf("hash of shard %v in dataset %v does not match dataset",
+				if !bytes.Equal(shardHash[:], hash) {
+					return nil, fmt.Errorf("hash of shard %v in dataset %v previously found data",
 						o, idx)
 				}
+			} else {
+				rShards[o] = encoding.shards[i]
+				orderMap[o] = shardHash[:]
 			}
-
 		}
 
 	}
 
-	return nil, nil
+	enc, err := reedsolomon.New(numDataShards, numParityShards)
+	if err != nil {
+		return nil, err
+	}
+
+	err = enc.ReconstructData(rShards)
+	if err != nil {
+		return nil, err
+	}
+
+	result := bytes.Join(rShards, nil)
+
+	return result[:originalLen], nil
 }

@@ -1,6 +1,7 @@
 package por
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -32,7 +33,7 @@ func TestCreateErasureCoding(t *testing.T) {
 		// t.Log(err)
 	}
 
-	_, err = CreateErasureCoding(dataset, 100, 100)
+	// _, err = CreateErasureCoding(dataset, 100, 100)
 	if err == nil {
 		t.Errorf("erasure coding created for too few number of segments")
 	} else {
@@ -101,6 +102,21 @@ func TestSelectSegments(t *testing.T) {
 
 func TestReconstructDataFromSegments(t *testing.T) {
 	// Testing correct recovery of full dataset
+	dataset := []byte("qwertyuiopasdfghjkl")
+	encoding, err := CreateErasureCoding(dataset, 4, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reconstructed, err := ReconstructDataFromSegments([]*EncodedDataset{encoding})
+	if err != nil {
+		t.Error(err)
+	} else if !bytes.Equal(reconstructed, dataset) {
+		t.Errorf("reconstructed %v from original dataset %v", reconstructed, dataset)
+	} else {
+		// t.Log(string(reconstructed))
+	}
+
 	// Testing correct recovery of segmented dataset
 	// Testing incorrect recovery - no datasets passed
 	// Testing incorrect recovery - wrong number of shards
@@ -109,4 +125,5 @@ func TestReconstructDataFromSegments(t *testing.T) {
 	// Testing incorrect recovery - wrong order
 	// Testing incorrect recovery - wrong hashes
 	// Testing incorrect recovery - wrong shards
+	// Testing incorrect recovery - inconsistent length
 }
