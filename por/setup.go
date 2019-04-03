@@ -90,33 +90,33 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 // and returns that subset as a new EncodedDataset. An error is returned if the
 // subset is invalid for the dataset, or if the hashes of the shards of the
 // dataset are invalid.
-func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, error) {
-	if len(subset) > len(dataset.shards) {
+func SelectSegments(encoding *EncodedDataset, subset []int) (*EncodedDataset, error) {
+	if len(subset) > len(encoding.shards) {
 		return nil, fmt.Errorf("cannot select subset of size %v from set of %v shards",
-			len(subset), len(dataset.shards))
+			len(subset), len(encoding.shards))
 	}
 	subShards := make([][]byte, len(subset))
 	subHashes := make([][]byte, len(subset))
 	subOrdering := make([]int, len(subset))
 
 	for i, index := range subset {
-		if index >= len(dataset.shards) {
+		if index >= len(encoding.shards) {
 			return nil, fmt.Errorf("cannot select index %v from set of %v shards",
-				index, len(dataset.shards))
+				index, len(encoding.shards))
 		}
-		subShards[i] = make([]byte, len(dataset.shards[index]))
-		copy(subShards[i], dataset.shards[index])
-		subHashes[i] = make([]byte, len(dataset.hashes[index]))
+		subShards[i] = make([]byte, len(encoding.shards[index]))
+		copy(subShards[i], encoding.shards[index])
+		subHashes[i] = make([]byte, len(encoding.hashes[index]))
 		shardHash := sha256.Sum256(subShards[i])
-		if !bytes.Equal(shardHash[:], dataset.hashes[index]) {
-			return nil, fmt.Errorf("hash of shard %v does not match dataset", index)
+		if !bytes.Equal(shardHash[:], encoding.hashes[index]) {
+			return nil, fmt.Errorf("hash of shard %v does not match encoding", index)
 		}
-		copy(subHashes[i], dataset.hashes[index])
-		subOrdering[i] = dataset.ordering[index]
+		copy(subHashes[i], encoding.hashes[index])
+		subOrdering[i] = encoding.ordering[index]
 	}
 
 	return &EncodedDataset{subShards, subHashes, subOrdering,
-		dataset.numDataShards, dataset.numParityShards, dataset.originalLen}, nil
+		encoding.numDataShards, encoding.numParityShards, encoding.originalLen}, nil
 }
 
 // ReconstructDataFromSegments takes in a slice of EncodedDatasets and restores
@@ -124,17 +124,17 @@ func SelectSegments(dataset *EncodedDataset, subset []int) (*EncodedDataset, err
 // segments of the original data in the correct order, or else an error is
 // thrown. An error is also thrown if a hash does not verify for a given
 // segment.
-func ReconstructDataFromSegments(datasets []*EncodedDataset) ([]byte, error) {
-	if len(datasets) == 0 {
-		return nil, fmt.Errorf("no datasets passed")
+func ReconstructDataFromSegments(encodings []*EncodedDataset) ([]byte, error) {
+	if len(encodings) == 0 {
+		return nil, fmt.Errorf("no encodings passed")
 	}
-	rShards := make([][]byte, len(datasets[0].shards))
+	rShards := make([][]byte, encodings[0].numDataShards+encodings[0].numParityShards)
 	orderMap := make(map[int][]byte)
-	numDataShards := datasets[0].numDataShards
-	numParityShards := datasets[0].numParityShards
-	originalLen := datasets[0].originalLen
+	numDataShards := encodings[0].numDataShards
+	numParityShards := encodings[0].numParityShards
+	originalLen := encodings[0].originalLen
 
-	for idx, encoding := range datasets {
+	for idx, encoding := range encodings {
 		if numDataShards != encoding.numDataShards {
 			return nil, fmt.Errorf("inconsistent numDataShards %v for dataset %v",
 				encoding.numDataShards, idx)

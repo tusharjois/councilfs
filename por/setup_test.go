@@ -118,6 +118,31 @@ func TestReconstructDataFromSegments(t *testing.T) {
 	}
 
 	// Testing correct recovery of segmented dataset
+	subset1 := []int{0, 2, 4, 6, 8, 10, 12, 14}
+	subset2 := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	subset3 := []int{9, 11, 13, 15}
+
+	encoding1, err := SelectSegments(encoding, subset1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoding2, err := SelectSegments(encoding, subset2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoding3, err := SelectSegments(encoding, subset3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reconstructed, err = ReconstructDataFromSegments([]*EncodedDataset{encoding1, encoding2, encoding3})
+	if err != nil {
+		t.Error(err)
+	} else if !bytes.Equal(reconstructed, dataset) {
+		t.Errorf("reconstructed %v from original dataset %v", reconstructed, dataset)
+	} else {
+		// t.Log(string(reconstructed))
+	}
+
 	// Testing incorrect recovery - no datasets passed
 	// Testing incorrect recovery - wrong number of shards
 	// Testing incorrect recovery - inconsistent number of shards
