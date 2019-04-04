@@ -2,6 +2,7 @@ package por
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"testing"
 )
 
@@ -134,7 +135,8 @@ func TestReconstructDataFromSegments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reconstructed, err = ReconstructDataFromSegments([]*EncodedDataset{encoding1, encoding2, encoding3})
+	reconstructed, err = ReconstructDataFromSegments([]*EncodedDataset{encoding1,
+		encoding2, encoding3})
 	if err != nil {
 		t.Error(err)
 	} else if !bytes.Equal(reconstructed, dataset) {
@@ -144,11 +146,83 @@ func TestReconstructDataFromSegments(t *testing.T) {
 	}
 
 	// Testing incorrect recovery - no datasets passed
-	// Testing incorrect recovery - wrong number of shards
+	_, err = ReconstructDataFromSegments(make([]*EncodedDataset, 0))
+	if err == nil {
+		t.Errorf("no error when no encodings passed")
+	} else {
+		// t.Log(err)
+	}
+
 	// Testing incorrect recovery - inconsistent number of shards
-	// Testing incorrect recovery - not enough shards
+	badEncoding1 := new(EncodedDataset)
+	*badEncoding1 = *encoding
+	badEncoding1.numDataShards = 1000
+	badEncoding2 := new(EncodedDataset)
+	*badEncoding2 = *encoding
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding1, badEncoding2})
+	if err == nil {
+		t.Errorf("no error when there is an inconsistent number of shards")
+	} else {
+		// t.Log(err)
+	}
+
 	// Testing incorrect recovery - wrong order
+	badEncoding := new(EncodedDataset)
+	*badEncoding = *encoding
+	copy(badEncoding.ordering, encoding.ordering)
+	badEncoding.ordering[0] = 1
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding})
+	if err == nil {
+		t.Errorf("no error when there is a wrong order")
+	} else {
+		// t.Log(err)
+	}
+
 	// Testing incorrect recovery - wrong hashes
-	// Testing incorrect recovery - wrong shards
+	badEncoding = new(EncodedDataset)
+	*badEncoding = *encoding
+	copy(badEncoding.ordering, encoding.ordering)
+	badEncoding.ordering[0] = 1
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding})
+	if err == nil {
+		t.Errorf("no error when the hashes are wrong")
+	} else {
+		// t.Log(err)
+	}
+
 	// Testing incorrect recovery - inconsistent length
+	badEncoding = new(EncodedDataset)
+	*badEncoding = *encoding
+	copy(badEncoding.ordering, encoding.ordering)
+	badEncoding.shards[0] = append(badEncoding.shards[0], 0)
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding})
+	if err == nil {
+		t.Errorf("no error when the length is inconsistent")
+	} else {
+		// t.Log(err)
+	}
+
+	// Testing incorrect recovery - wrong number of shards
+	badEncoding = new(EncodedDataset)
+	*badEncoding = *encoding
+	badEncoding.shards = append(badEncoding.shards, []byte("ab"))
+	badHash := sha256.Sum256([]byte("ab"))
+	badEncoding.hashes = append(badEncoding.hashes, badHash[:])
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding})
+	if err == nil {
+		t.Errorf("no error when the number of shards are incorrect")
+	} else {
+		// t.Log(err)
+	}
+
+	// Testing incorrect recovery - not enough shards
+	badEncoding.shards[0] = nil
+	badEncoding.hashes[0] = nil
+	_, err = ReconstructDataFromSegments([]*EncodedDataset{badEncoding})
+	if err == nil {
+		t.Errorf("no error when there are not enough shards")
+	} else {
+		// t.Log(err)
+	}
+
 }

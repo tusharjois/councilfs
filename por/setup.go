@@ -161,7 +161,7 @@ func ReconstructDataFromSegments(encodings []*EncodedDataset) ([]byte, error) {
 			// TODO: Do more complex conflict resolution than this
 			if hash, present := orderMap[o]; present {
 				if !bytes.Equal(shardHash[:], hash) {
-					return nil, fmt.Errorf("hash of shard %v in dataset %v previously found data",
+					return nil, fmt.Errorf("hash of shard %v in dataset %v previously found data different",
 						o, idx)
 				}
 			} else {
