@@ -1,161 +1,158 @@
 package por
 
-import(
-    "bytes"
-    "crypto/x509"
-	"crypto/rand"
-	"crypto/sha256"
+import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
-    "fmt"
-    "math/big"
+	"fmt"
+	"math/big"
 )
 
-type File_Info struct {
-    // `json:"file_segment"`, `json:"sig"`, `json:"proof"`
-	File_segment []byte 
-	Signature []byte
-	Merkle_proof []byte
+type FileInfo struct {
+	// `json:"fileSegment"`, `json:"sig"`, `json:"proof"`
+	FileSegment []byte
+	Signature   []byte
+	MerkleProof []byte
 }
 
-type Ticket struct{
-    // `json:"public_key"`, `json:"seed"`,`json:"proof_files"`
-    // ecdsa.PublicKey 
-	Public_key []byte
-	Seed []byte
-    Proof_files []File_Info 
+type Ticket struct {
+	// `json:"publicKey"`, `json:"seed"`,`json:"proofFiles"`
+	// ecdsa.PublicKey
+	PublicKey  []byte
+	Seed       []byte
+	ProofFiles []FileInfo
 }
-
-
 
 // POR Related Capabilities
-// This also functions as the scratch off ticket. The only difference between the one used for the 
+// This also functions as the scratch off ticket. The only difference between the one used for the
 // scratch off and the one used for communicating with a client is the client gets to pick tne files
-// tested on in one scenario 
+// tested on in one scenario
 
-func calculateFileIndex(hash_string [32]byte, number_shards int64) int64{
-    return big.NewInt(0).Mod(big.NewInt(0).SetBytes(hash_string[:]), big.NewInt(number_shards)).Int64()
+func calculateFileIndex(hashString [32]byte, numberShards int64) int64 {
+	return big.NewInt(0).Mod(big.NewInt(0).SetBytes(hashString[:]), big.NewInt(numberShards)).Int64()
 }
 
-func ProducePOR(minerKey *ecdsa.PrivateKey, blockchain_val []byte, stored_files *EncodedDataset, k uint) []byte {
+func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *EncodedDataset, k uint) []byte {
 	// use random seed to select portions of file to compute the POR over
-    seed := make([]byte, 6)
-    _, err := rand.Read(seed)
-    if err != nil {
-    	panic(err)
-    }
-    // mother F WHY JUST FRICKIN WHY 
-    publicKeyAsBytes, error := x509.MarshalPKIXPublicKey(&minerKey.PublicKey)
-    if error != nil {
-        panic(error)
-    }
+	seed := make([]byte, 6)
+	_, err := rand.Read(seed)
+	if err != nil {
+		panic(err)
+	}
+	// mother F WHY JUST FRICKIN WHY
+	publicKeyAsBytes, error := x509.MarshalPKIXPublicKey(&minerKey.PublicKey)
+	if error != nil {
+		panic(error)
+	}
 
-    ticket := Ticket{Public_key: publicKeyAsBytes, Seed: seed, Proof_files: make([]File_Info,k)}
+	ticket := Ticket{PublicKey: publicKeyAsBytes, Seed: seed, ProofFiles: make([]FileInfo, k)}
 
-    s, r := big.NewInt(0), big.NewInt(0)
-    sig_current := []byte(fmt.Sprintf("(%d,%d)", r, s))
-    // TODO make faster by saving computation of repetitive strings given to sha 256
-    
-    var id_str []byte = append(blockchain_val, publicKeyAsBytes...)
-    hash_str := append(id_str, seed...)
-    strShaRes := sha256.Sum256(hash_str)
-    current_file := calculateFileIndex(strShaRes, int64(len(stored_files.shards)))
-    var i uint = 0
-    for ;i < k; i++ {
-        hash_str = append(id_str, sig_current...)
-        hash_str = append(hash_str, stored_files.shards[current_file]...)
-               
-    	current_hash := sha256.Sum256(hash_str)
-       
-    	r, s, error = ecdsa.Sign(rand.Reader, minerKey, current_hash[:])
-        if error != nil {
-            panic(error)
-        }
-        
-        sig_current = []byte(fmt.Sprintf("(%d,%d)", r, s))
-    	add_fileinfo := File_Info{File_segment: stored_files.shards[current_file], Signature: sig_current, Merkle_proof: stored_files.hashes[current_file]}
-    	ticket.Proof_files[i] = add_fileinfo
-        // note this is problematic right now because it could select the same value twice
-        hash_str = append(id_str, sig_current...)
-        strShaRes = sha256.Sum256(hash_str)
-        current_file = calculateFileIndex(strShaRes, int64(len(stored_files.shards)))
-    }
-    final_ticket, err := json.Marshal(ticket)
-    if err != nil {
-    	panic(err)
-    }
-    return final_ticket
+	s, r := big.NewInt(0), big.NewInt(0)
+	sigCurrent := []byte(fmt.Sprintf("(%d,%d)", r, s))
+	// TODO make faster by saving computation of repetitive strings given to sha 256
+
+	var idStr []byte = append(blockchainVal, publicKeyAsBytes...)
+	hashStr := append(idStr, seed...)
+	strShaRes := sha256.Sum256(hashStr)
+	currentFile := calculateFileIndex(strShaRes, int64(len(storedFiles.shards)))
+	var i uint
+	for ; i < k; i++ {
+		hashStr = append(idStr, sigCurrent...)
+		hashStr = append(hashStr, storedFiles.shards[currentFile]...)
+
+		currentHash := sha256.Sum256(hashStr)
+
+		r, s, error = ecdsa.Sign(rand.Reader, minerKey, currentHash[:])
+		if error != nil {
+			panic(error)
+		}
+
+		sigCurrent = []byte(fmt.Sprintf("(%d,%d)", r, s))
+		addFileinfo := FileInfo{FileSegment: storedFiles.shards[currentFile], Signature: sigCurrent, MerkleProof: storedFiles.hashes[currentFile]}
+		ticket.ProofFiles[i] = addFileinfo
+		// note this is problematic right now because it could select the same value twice
+		hashStr = append(idStr, sigCurrent...)
+		strShaRes = sha256.Sum256(hashStr)
+		currentFile = calculateFileIndex(strShaRes, int64(len(storedFiles.shards)))
+	}
+	finalTicket, err := json.Marshal(ticket)
+	if err != nil {
+		panic(err)
+	}
+	return finalTicket
 }
 
-func VerifyPOR(file_digests *EncodedDataset, blockchain_val []byte, ticket []byte, k uint) bool {
-	// first, parse ticket 
-    raw_ticket := json.RawMessage(ticket)
-    
-    var structured_ticket Ticket
-    err := json.Unmarshal(raw_ticket, &structured_ticket)
-    if err != nil {
-    	panic(err)
-    }
-    // validate the ticket
-    s, r := big.NewInt(0), big.NewInt(0)
-    current_sig := []byte(fmt.Sprintf("(%d,%d)", r, s))
-    written_key, error := x509.ParsePKIXPublicKey(structured_ticket.Public_key)
-    if error != nil {
-        panic(error)
-    }
-    // TODO: maybe change this but it should only ever be an ecdsa public key
-    miners_key, correct_type := written_key.(*ecdsa.PublicKey)
-    if !correct_type {
-        fmt.Print("Type of miners key should only be ecdsa, fail")
-        return false
-    } 
-    
-    id_str := append(blockchain_val, structured_ticket.Public_key...)
-    hash_str := append(id_str, structured_ticket.Seed...)
-    shaRes := sha256.Sum256(hash_str)
-    current_file := calculateFileIndex(shaRes, int64(len(file_digests.shards)))
-    var i uint = 0
-    for ; i < k; i++ {
+func VerifyPOR(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte, k uint) bool {
+	// first, parse ticket
+	rawTicket := json.RawMessage(ticket)
 
-        curr_file_info := structured_ticket.Proof_files[i]
-        hash_str = append(id_str, current_sig...)
-        hash_str = append(hash_str, file_digests.shards[i]...)
-        
-    	current_hash := sha256.Sum256(hash_str)
-        
-        if !bytes.Equal(curr_file_info.Merkle_proof, file_digests.hashes[current_file]) {
-            return false
-            //panic("File segment of Verifier does not match Prover's file")
-        }
-        var r, s *big.Int = big.NewInt(0), big.NewInt(0)
-        sig_scan := bytes.NewReader(curr_file_info.Signature)
-        _, err = fmt.Fscanf(sig_scan, "(%d,%d)", r, s)
-        if err != nil {
-            panic(err)
-        }
-        sig_check := ecdsa.Verify(miners_key, current_hash[:], r, s)
-        
-        if (!sig_check) {
-            return false
-            //panic("Failed signature check")
-        }
-        // note this is problematic right now because it could select the same value twice
-        current_sig = curr_file_info.Signature
-        hash_str = append(id_str, current_sig...)
-        shaRes = sha256.Sum256(hash_str)
-        current_file = calculateFileIndex(shaRes, int64(len(file_digests.shards)))
-    }
+	var structuredTicket Ticket
+	err := json.Unmarshal(rawTicket, &structuredTicket)
+	if err != nil {
+		panic(err)
+	}
+	// validate the ticket
+	s, r := big.NewInt(0), big.NewInt(0)
+	currentSig := []byte(fmt.Sprintf("(%d,%d)", r, s))
+	writtenKey, error := x509.ParsePKIXPublicKey(structuredTicket.PublicKey)
+	if error != nil {
+		panic(error)
+	}
+	// TODO: maybe change this but it should only ever be an ecdsa public key
+	minersKey, correctType := writtenKey.(*ecdsa.PublicKey)
+	if !correctType {
+		fmt.Print("Type of miners key should only be ecdsa, fail")
+		return false
+	}
+
+	idStr := append(blockchainVal, structuredTicket.PublicKey...)
+	hashStr := append(idStr, structuredTicket.Seed...)
+	shaRes := sha256.Sum256(hashStr)
+	currentFile := calculateFileIndex(shaRes, int64(len(fileDigests.shards)))
+	var i uint
+	for ; i < k; i++ {
+
+		currFileInfo := structuredTicket.ProofFiles[i]
+		hashStr = append(idStr, currentSig...)
+		hashStr = append(hashStr, fileDigests.shards[i]...)
+
+		currentHash := sha256.Sum256(hashStr)
+
+		if !bytes.Equal(currFileInfo.MerkleProof, fileDigests.hashes[currentFile]) {
+			return false
+			//panic("File segment of Verifier does not match Prover's file")
+		}
+		var r, s *big.Int = big.NewInt(0), big.NewInt(0)
+		sigScan := bytes.NewReader(currFileInfo.Signature)
+		_, err = fmt.Fscanf(sigScan, "(%d,%d)", r, s)
+		if err != nil {
+			panic(err)
+		}
+		sigCheck := ecdsa.Verify(minersKey, currentHash[:], r, s)
+
+		if !sigCheck {
+			return false
+			//panic("Failed signature check")
+		}
+		// note this is problematic right now because it could select the same value twice
+		currentSig = currFileInfo.Signature
+		hashStr = append(idStr, currentSig...)
+		shaRes = sha256.Sum256(hashStr)
+		currentFile = calculateFileIndex(shaRes, int64(len(fileDigests.shards)))
+	}
 	return true
 }
 
-
 //TODO: maybe switch to curve 25519 with a schnorr based sig scheme? -- do this later
 func GenerateKey() *ecdsa.PrivateKey {
-	priv_key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
 
-	return priv_key
+	return privKey
 }
