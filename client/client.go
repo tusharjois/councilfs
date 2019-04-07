@@ -56,9 +56,10 @@ type PaymentChannel struct {
 	channelID         []byte
 	clientPublicKey   []byte
 	aldermanPublicKey []byte
+	blockchainState   []byte
 	payment           uint
 	interval          time.Duration
-	messages          []ChannelMessage
+	messages          []*ChannelMessage
 	Encoding          *por.EncodedDataset
 }
 
@@ -73,13 +74,56 @@ type ChannelMessage struct {
 }
 
 // GetPayload returns the MessageType of the ChannelMessage and the associated payload.
-func (ChannelMessage) GetPayload() (MessageType, []byte, error) {
-	return ChannelOpen, nil, nil // TODO
+func (msg *ChannelMessage) GetPayload() (MessageType, []byte, error) {
+	return msg.mType, msg.payload, nil // TODO: Verification
+}
+
+// NewMessage creates a ChannelMessage with specified parameters. TODO: Add more description.
+func NewMessage(mType MessageType, v interface{}, channelID []byte, signingKey *ecdsa.PrivateKey, prev *ChannelMessage) *ChannelMessage {
+	jsonPayload, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	toSign := make([]byte, len(jsonPayload))
+	copy(toSign, jsonPayload)
+	var prevHash [sha256.Size]byte
+	if prev != nil {
+		jsonPrev, err := json.Marshal(prev)
+		if err != nil {
+			panic(err)
+		}
+		prevHash = sha256.Sum256(jsonPrev)
+	}
+	toSign = append(toSign, prevHash[:]...)
+	toSignHash := sha256.Sum256(toSign)
+
+	r, s, err := ecdsa.Sign(rand.Reader, signingKey, toSignHash[:])
+	if err != nil {
+		panic(err)
+	}
+
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&signingKey.PublicKey)
+	if err != nil {
+		panic(err)
+	}
+
+	newMessage := &ChannelMessage{
+		mType:           mType,
+		channelID:       channelID,
+		signature:       []byte(fmt.Sprintf("(%d,%d)", r, s)),
+		senderPublicKey: publicKeyBytes,
+		payload:         jsonPayload,
+		prevHash:        prevHash,
+	}
+
+	copy(newMessage.channelID, channelID)
+
+	return newMessage
 }
 
 // OpenChannel creates a new PaymentChannel between a client and an alderman.
 func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, payment uint,
-	paymentInterval time.Duration, encoding *por.EncodedDataset) *PaymentChannel {
+	paymentInterval time.Duration, encoding *por.EncodedDataset) (*PaymentChannel, *ChannelMessage) {
 
 	newChannel := new(PaymentChannel)
 	newChannel.channelID = make([]byte, 128)
@@ -105,34 +149,26 @@ func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, paym
 
 	// Note that this can become nil after the file is uploaded
 	newChannel.Encoding = encoding
+	newChannel.blockchainState = make([]byte, 6)
+	newMessage := NewMessage(ChannelOpen, newChannel, newChannel.channelID, clientKey, nil)
 
-	jsonPayload, err := json.Marshal(newChannel)
-	toSign := make([]byte, len(jsonPayload))
-	copy(toSign, jsonPayload)
-	var emptyHash [sha256.Size]byte
-	toSign = append(toSign, emptyHash[:]...)
-	toSignHash := sha256.Sum256(toSign)
+	newChannel.messages = make([]*ChannelMessage, 0)
+	newChannel.messages = append(newChannel.messages, newMessage)
 
-	r, s, err := ecdsa.Sign(rand.Reader, clientKey, toSignHash[:])
-	if err != nil {
-		panic(err)
-	}
-
-	newMessage := ChannelMessage{
-		mType:           ChannelOpen,
-		channelID:       make([]byte, len(newChannel.channelID)),
-		signature:       []byte(fmt.Sprintf("(%d,%d)", r, s)),
-		senderPublicKey: clientKeyBytes,
-		payload:         jsonPayload,
-		prevHash:        emptyHash,
-	}
-
-	copy(newMessage.channelID, newChannel.channelID)
-
-	return newChannel
+	return newChannel, newMessage
 }
 
-// Engage
-func (*PaymentChannel) Engage(proof []byte) bool {
-	return false
+// Engage allows the client to participate in the PaymentChannel.
+func (pay *PaymentChannel) Engage(proof []byte, clientKey *ecdsa.PrivateKey) *ChannelMessage {
+	if pay.Encoding != nil {
+		if !por.VerifyPOR(pay.Encoding, pay.blockchainState, proof, pay.Encoding.Length()) {
+			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.channelID, clientKey, pay.messages[len(pay.messages)-1])
+			pay.messages = append(pay.messages, closeMessage)
+			return closeMessage
+		}
+	}
+
+	payMessage := NewMessage(SendPayment, pay.payment, pay.channelID, clientKey, pay.messages[len(pay.messages)-1])
+	pay.messages = append(pay.messages, payMessage)
+	return payMessage
 }

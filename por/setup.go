@@ -20,6 +20,11 @@ type EncodedDataset struct {
 	originalLen     int
 }
 
+// Length returns the number of shards in the EncodedDataset.
+func (enc *EncodedDataset) Length() uint {
+	return uint(len(enc.shards))
+}
+
 // CreateErasureCoding creates a maximum distance separable code for a dataset
 // into n = r * f segments, such that any f segments can reconstruct the
 // dataset. The input slice is operated on directly. An error is returned if the
