@@ -1,0 +1,181 @@
+\documentclass{article}
+
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{lipsum}
+
+\title{CouncilFS[A Working Title]}
+
+
+\author{
+  Gabrielle Beck \\
+  Department of Computer Science\\
+  Johns Hopkins University \\
+ Baltimore, MD \\
+  \texttt{becgabri@jhu.edu} \\
+  %% examples of more authors
+   \And
+ Tushar Jois \\
+  Department of Computer Science\\
+  Johns Hopkins University\\
+  Baltimore, MD \\
+  \texttt{tushar.jois@jhu.edu} \\
+  %% \AND
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+}
+
+\begin{document}
+\maketitle
+
+%\begin{abstract}
+%\lipsum[1]
+%\end{abstract}
+
+
+% keywords can be removed
+%\keywords{First keyword \and Second keyword \and More}
+
+
+\section{Introduction}
+\lipsum[2]
+\lipsum[3]
+
+
+\section{Related Work}
+\subsection{Alternative Proofs of Work}
+Our work exists at the cross-section of many different active fields of research. Before this paper, there have been many proposals for Proof-of-Work schemes that serve some useful function or purpose like PrimeCoin. In a previous paper, there has also been a proposal to utilize a POR as a proof of work for the purpose of storing archival information that would be known by all miners so that validation of the files could be assured $\mathcal{F}$. The authors also assume that this file would not be updated and introduce a new stateful signature scheme that should be relatively efficient while also ensuring that a miner cannot "outsource" their computation. This differs from our scheme as we allow for the existence of other files carried by clients that are given directly to trusted nodes, called \emph{alderman}, and are not verifiable by every single node on the network.\\
+
+Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Posession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation open and then answer challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a form of pebbling and pebble the spaces and prove something about the graph to a verifier. One popular Proof of Space is spacemint which is unique in that it implements two different blockchains and utilizes a punishment mechanism to discentivize miners from deviating from the protocol in ways that are unlikely to happen if Proof of Work algorithms (for example, nothing at stake problems and block/challenge grinding). In our future work, we propose a similar kind of punishment mechanism. However, we use this tool to demote misbehaving Alderman and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history either. 
+
+\subsection{Censorship Resistant File Storage}
+There has also been work done previously in the creation of file storage resistant to the takedown of particular governments and agencies. Publius, for example, was proposed as a method of resistance in which n servers host the encrypted content but in order to get the key a client must obtain k-out-of-n secret shares that are also controlled by these servers. While there is plausible deniability on the part of the servers, as they are hosting encrypted material, there is no mechanism or recompense in place for servers electing to delete their shares and no way to communicate this information to all of the other servers readily on the network. What this paper attempts to do is fundamentally different as we not only want to provide a mechanism by which servers can help dissidents/clients but we want to provide them an incentive to do so as well. Namely, in the form of money or currency. 
+
+\subsection{Headings: second level}
+\lipsum[5]
+\begin{equation}
+\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
+\end{equation}
+
+\subsubsection{Headings: third level}
+\lipsum[6]
+
+\paragraph{Paragraph}
+\lipsum[7]
+
+\section{Examples of citations, figures, tables, references}
+\label{sec:others}
+ \cite{permacoin-repurposing-bitcoin-work-for-data-preservation}
+
+The documentation for \verb+natbib+ may be found at
+\begin{center}
+  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
+\end{center}
+Of note is the command \verb+\citet+, which produces citations
+appropriate for use in inline text.  For example,
+\begin{verbatim}
+   \citet{hasselmo} investigated\dots
+\end{verbatim}
+produces
+\begin{quote}
+  Hasselmo, et al.\ (1995) investigated\dots
+\end{quote}
+
+\begin{center}
+  \url{https://www.ctan.org/pkg/booktabs}
+\end{center}
+
+
+\subsection{Figures}
+\lipsum[10] 
+See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
+\lipsum[11] 
+
+\begin{figure}
+  \centering
+  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{Sample figure caption.}
+  \label{fig:fig1}
+\end{figure}
+
+\subsection{Tables}
+\lipsum[12]
+See awesome Table~\ref{tab:table}.
+
+\begin{table}
+ \caption{Sample table title}
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \multicolumn{2}{c}{Part}                   \\
+    \cmidrule(r){1-2}
+    Name     & Description     & Size ($\mu$m) \\
+    \midrule
+    Dendrite & Input terminal  & $\sim$100     \\
+    Axon     & Output terminal & $\sim$10      \\
+    Soma     & Cell body       & up to $10^6$  \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:table}
+\end{table}
+
+\subsection{Lists}
+\begin{itemize}
+\item Lorem ipsum dolor sit amet
+\item consectetur adipiscing elit. 
+\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
+\end{itemize}
+
+
+\bibliographystyle{unsrt}  
+\bibliography{references}  %%% Remove comment to use the external .bib file (using bibtex).
+%%% and comment out the ``thebibliography'' section.
+
+
+%%% Comment out this section when you \bibliography{references} is enabled.
+%\begin{thebibliography}{1}
+
+%\bibitem{kour2014real}
+%George Kour and Raid Saabne.
+%\newblock Real-time segmentation of on-line handwritten arabic script.
+%\newblock In {\em Frontiers in Handwriting Recognition (ICFHR), 2014 14th
+%  International Conference on}, pages 417--422. IEEE, 2014.
+
+%\bibitem{kour2014fast}
+%George Kour and Raid Saabne.
+%\newblock Fast classification of handwritten on-line arabic characters.
+%\newblock In {\em Soft Computing and Pattern Recognition (SoCPaR), 2014 6th
+%  International Conference of}, pages 312--318. IEEE, 2014.
+
+%\bibitem{hadash2018estimate}
+%Guy Hadash, Einat Kermany, Boaz Carmeli, Ofer Lavi, George Kour, and Alon
+%  Jacovi.
+%\newblock Estimate and replace: A novel approach to integrating deep neural
+% networks with existing applications.
+%\newblock {\em arXiv preprint arXiv:1804.09028}, 2018.
+
+%\end{thebibliography}
+
+
+\end{document}

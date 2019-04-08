@@ -1,2 +1,9 @@
 # macOS garbage
 **/.DS_Store
+*.aux
+*.log
+*.dvi
+*synctex.gz
+*.out
+*.blg
+*.bbl
