@@ -13,7 +13,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
 
-\title{CouncilFS[A Working Title]}
+\title{CouncilFS: An Incentivized, Resilient File Distribution System}
 
 
 \author{
@@ -28,7 +28,7 @@
   Department of Computer Science\\
   Johns Hopkins University\\
   Baltimore, MD \\
-  \texttt{tushar.jois@jhu.edu} \\
+  \texttt{jois@cs.jhu.edu} \\
   %% \AND
   %% Coauthor \\
   %% Affiliation \\
@@ -70,6 +70,62 @@ Other alternative proofs of work that are similar to PORs include Proofs of Spac
 
 \subsection{Censorship Resistant File Storage}
 There has also been work done previously in the creation of file storage resistant to the takedown of particular governments and agencies. Publius, for example, was proposed as a method of resistance in which n servers host the encrypted content but in order to get the key a client must obtain k-out-of-n secret shares that are also controlled by these servers. While there is plausible deniability on the part of the servers, as they are hosting encrypted material, there is no mechanism or recompense in place for servers electing to delete their shares and no way to communicate this information to all of the other servers readily on the network. What this paper attempts to do is fundamentally different as we not only want to provide a mechanism by which servers can help dissidents/clients but we want to provide them an incentive to do so as well. Namely, in the form of currency. 
+
+\section{Construction}
+
+\subsection{Overview}
+
+There are three types of nodes in our network: \emph{members}, \emph{aldermen},
+and \emph{clients}. Members form the backbone of the network; they are the nodes
+that primarily interface with the blockchain. They verify transactions between
+users of the underlying currency of CouncilFS. Aldermen are members of the
+network who have been elected to take on more responsbility in the network.
+Their primary responsbility is to maintain instances of the files that clients
+upload. Clients pay for this privlege, and engage in a protocol to ensure that
+the alderman remains honest. Aldermen who are not honest are demoted back to the
+member pool. This general outline of our construction is discussed in more
+detail in the subsections below.
+
+\subsection{Members}
+
+At the core of the CouncilFS network are members. The underlying token of
+CouncilFS, known as a \emph{shire}, is exchanged between users as transactions.
+Members organize user transactions into blocks, verify correctness, and perform
+a proof-of-work computation. The computation performed is then compared to a
+difficulty value by all other nodes, and if it is less than this value, the rest
+of the network accepts a member's block. This process, known as Nakamoto
+Consensus, is analgous to the process performed by miners in Bitcoin \cite{btc}.
+
+\subsubsection{Proofs-of-Retrievability}
+
+Unlike Bitcoin miners, however, CouncilFS members perform a
+proof-of-retrieveability (PoR), in which a prover proves that they are able to
+retrieve a file on demand, without transmitting the entire file to a the
+verifier. This PoR is performed by every member on a common dataset $D$; because
+this dataset is common, each other member in the network acts a verifier. The
+PoR is computationally intensive, and is still fundamentally a proof-of-work
+scheme; it acts as a replacement for the SHA-256 hash function used in Bitcoin
+and related cryptocurrencies.
+
+Our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
+that it acts as a positive use of computational resources. There are some key
+differences, however. In CouncilFS, the aldermen replace the dealer as the
+arbiter of the common dataset. The aldermen decide which members get which
+slices of $D$, rather than having a trusted setup phase. Additionally, because
+the aldermen handle $D$, it can be updated continuously. Both of these points
+are discussed further later in the paper.
+
+\subsection{Aldermen}
+
+\subsubsection{File Storage}
+
+\paragraph{Clients.}
+
+\subsubsection{Electing New Aldermen}
+
+\subsubsection{Punishing Misbehaving Aldermen}
+
+\subsection{The Blockchain}
 
 \subsection{Headings: second level}
 \lipsum[5]
