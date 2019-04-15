@@ -36,6 +36,12 @@ const (
 	// funding transaction.
 	FundsApproved
 
+	// PORRequest is sent when a client wants to receive from a client a proof they are 
+	// still holding the file they said they would be
+    PORRequest
+
+    PORResponse
+
 	// SendPayment is sent when the client wants to send payment to the alderman
 	// to save the file; this can be sent either after a valid POR is verified
 	// or just on time. The payload is the payment being sent (little-endian)
@@ -63,10 +69,12 @@ type PaymentChannel struct {
 	Encoding          *por.EncodedDataset
 }
 
+const CLIENTIDSIZE uint = 128
+
 // ChannelMessage is a message between a client and an alderman. TODO: Add more description.
 type ChannelMessage struct {
 	mType           MessageType
-	channelID       []byte
+	channelID       [CLIENTIDSIZE]byte
 	signature       []byte
 	senderPublicKey []byte
 	payload         []byte

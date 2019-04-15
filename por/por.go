@@ -70,6 +70,14 @@ func AttemptedMine(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles
 
 }
 
+func VerifyMine(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte, k uint, difficultyParam *big.Int) bool{
+	porRes := VerifyPOR(fileDigests, blockchainVal, ticket, k)
+	if porRes {
+		return checkForWinningTicket(blockchainVal, ticket, difficultyParam)
+	}
+	return false
+}
+
 // Produces a Proof of Retrievability over segments of an encoded file F. The final returned value is a ticket that can be used
 // by a miner if it fulfills the difficulty parameter. blockchainVal is equivalent to the blockchainVal described in AttemptedMine and
 // seed is a random value that makes the ticket effectively random (so that any group of transactions with at least one seed could be used
@@ -117,19 +125,25 @@ func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *E
 	return finalTicket
 }
 
+// Takes in a ticket as a byte string and then parses it to produce a ticket object
+func ParseTicket(ticket []byte) *Ticket {
+	// first, parse ticket
+	rawTicket := json.RawMessage(ticket)
+
+	structuredTicket := new(Ticket)
+    err := json.Unmarshal(rawTicket, &structuredTicket)
+	if err != nil {
+		panic(err)
+	}
+	return structuredTicket
+}
+
 // Verifies that a given POR ticket is correct in that the following must be true:
 // 1) the POR was created with the correct blockchainVal [it matches the previous block in history]
 // 2) the included files are segments of the fileDigests held by the verifier
 // 3) the final value passes the publicly known difficulty parameter Z
-func VerifyPOR(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte, k uint, difficultyParam *big.Int) bool {
-	// first, parse ticket
-	rawTicket := json.RawMessage(ticket)
-
-	var structuredTicket Ticket
-	err := json.Unmarshal(rawTicket, &structuredTicket)
-	if err != nil {
-		panic(err)
-	}
+func VerifyPOR(rootFileDigest [32]byte, blockchainVal []byte, ticket []byte, k uint) bool {
+	structuredTicket := ParseTicket(ticket)
 	// validate the ticket
 	s, r := big.NewInt(0), big.NewInt(0)
 	currentSig := []byte(fmt.Sprintf("(%d,%d)", r, s))
@@ -156,7 +170,9 @@ func VerifyPOR(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte,
 		hashStr = append(hashStr, fileDigests.shards[i]...)
 
 		currentHash := sha256.Sum256(hashStr)
-
+        // the merkle proof right now is basically just a hash of the segment. 
+        // so there are two ways to do this: have the verifier hold more information
+        // or have the prover provide more information and the verifier do more computation
 		if !bytes.Equal(currFileInfo.MerkleProof, fileDigests.hashes[currentFile]) {
 			return false
 			//panic("File segment of Verifier does not match Prover's file")
@@ -181,7 +197,7 @@ func VerifyPOR(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte,
 	}
 
 	// calculate final hash value
-	return checkForWinningTicket(blockchainVal, ticket, difficultyParam)
+	return true
 }
 
 // Bare bones interface for producing an ecdsa asymmetric key. Accepts no arguments and pulls from cryptographic randomness 

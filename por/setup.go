@@ -25,6 +25,30 @@ func (enc *EncodedDataset) Length() uint {
 	return uint(len(enc.shards))
 }
 
+func computeTreeRoot(shards [][]byte) []byte {
+	var calculateTreeRoot [len(shards)][]byte
+    var length = len(shards)
+    for i := 0; i <= length; i++ {
+        hashNode := sha256.Sum256(shards[i])
+        calculateTreeRoot[i] = hashNode[:]    
+    }
+    if length > 1 {
+    	j := 0
+        for i := 0; i <= length - 1; i+=2 {
+        	if i + 1 >= length {
+                calculateTreeRoot[j] = createTreeRoot[i]
+                j += 1
+        	} else {
+        		combine := append(calculateTreeRoot[i], calculateTreeRoot[i+1]...)
+                hashNode := sha256.Sum256(combine)
+                calculateTreeRoot[j] = hashNode[:]
+                j += 1
+        	}
+        }
+        length = j 
+    }
+    return calculateTreeRoot[0]
+}
 // CreateErasureCoding creates a maximum distance separable code for a dataset
 // into n = r * f segments, such that any f segments can reconstruct the
 // dataset. The input slice is operated on directly. An error is returned if the
