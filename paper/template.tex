@@ -49,9 +49,9 @@
 \begin{document}
 \maketitle
 
-%\begin{abstract}
-%\lipsum[1]
-%\end{abstract}
+\begin{abstract}
+  We present \textsc{CouncilFS},
+\end{abstract}
 
 
 % keywords can be removed
@@ -61,10 +61,44 @@
 \section{Introduction}
 
 
+The main purpose of this work is to try and solve the inherent wastefulness in
+popular cryptocurrencies by proposing a proof of work that can be used to
+perform a useful function, in this case, storing files for those who are willing
+to pay for such storage. Other blockchain researchers before us have also
+identified this as a problematic issue and have tried to rectify it through
+creating alternatives to Bitcoin’s hash-based puzzle. These solutions include
+schemes that do not rely on ludicrous amounts of computation such as Proofs of
+Stake (where who gets to mine is based off of players that have more stock in
+the current network) and Proofs of Space (where there is a lot of computation
+done up front for initialization of a new miner, but the actual mining itself is
+cheap). However, schemes that do not rely on heavy computation tend to suffer
+from “nothing at stake” problems because there is no incentive for miners to
+work on just the longest chain when it is so inexpensive to try and extend other
+forks.
+
+Therefore, the other alternative to these style of proofs are proofs of
+work that serve some utilitarian function (i.e. distributed file storage).
+Proofs of Retrievabiliy (PoRs) have been proposed as alternatives to a hash
+based proof of work by authors such as the creators of Permacoin, however, there
+scheme has some limitations in that they assume that the file has to be publicly
+available and that it can be handed out to new miners by a trusted dealer. This
+limits its usefulness. Because they focus on storing a large publicly known
+file, they also do not acknowledge any potential that this scheme brings for
+loose censorship resistance. By distributing the trusted dealer among more
+mutually distrusting parties, we can accommodate the storage of encrypted files
+and provide a myriad of parties that a client can access should any few be
+blocked or taken down. Overall, we believe our scheme leverages economic
+incentives and blockchain technologies to create a currency that can more or
+less be used to drive distributed storage in a way that penalizes those that
+attempt to cheat clients out of money without of their files and allows for
+discrete sharing of potentially covert information.
+
+\paragraph{Contribution.} We present \textsc{CouncilFS}, a 
+
 
 \section{Related Work}
 \subsection{Alternative Proofs of Work}
-Our work exists at the cross-section of many different active fields of research. Before this paper, there have been many proposals for Proof-of-Work schemes that serve some useful function or purpose like PrimeCoin. In a previous paper, there has also been a proposal to utilize a POR as a proof of work for the purpose of storing archival information that would be known by all miners so that validation of the files could be assured $\mathcal{F}$. The authors also assume that this file would not be updated and introduce a new stateful signature scheme that should be relatively efficient while also ensuring that a miner cannot "outsource" their computation. This differs from our scheme as we allow for the existence of other files carried by clients that are given directly to trusted nodes, called \emph{Alderman}, and are not verifiable by every single node on the network.\\
+Our work exists at the cross-section of many different active fields of research. Before this paper, there have been many proposals for Proof-of-Work schemes that serve some useful function or purpose like PrimeCoin. In a previous paper, there has also been a proposal to utilize a POR as a proof of work for the purpose of storing archival information that would be known by all miners so that validation of the files could be assured $\mathcal{D}$. The authors also assume that this file would not be updated and introduce a new stateful signature scheme that should be relatively efficient while also ensuring that a miner cannot "outsource" their computation. This differs from our scheme as we allow for the existence of other files carried by clients that are given directly to trusted nodes, called \emph{Alderman}, and are not verifiable by every single node on the network.\\
 
 Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation open and then answer challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a form of pebbling and pebble the spaces and prove something about the graph to a verifier. One popular Proof of Space is spacemint which is unique in that it implements two different blockchains and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol in ways that are unlikely to happen if Proof of Work algorithms (for example, nothing at stake problems and block/challenge grinding). In our future work, we propose a similar kind of punishment mechanism. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history either. 
 
@@ -101,7 +135,7 @@ Consensus, is analgous to the process performed by miners in Bitcoin \cite{btc}.
 Unlike Bitcoin miners, however, CouncilFS members perform a
 proof-of-retrieveability (PoR), in which a prover proves that they are able to
 retrieve a file on demand, without transmitting the entire file to a the
-verifier. This PoR is performed by every member on a common dataset $D$; because
+verifier. This PoR is performed by every member on a common dataset $\mathcal{D}$; because
 this dataset is common, each other member in the network acts a verifier. The
 PoR is computationally intensive, and is still fundamentally a proof-of-work
 scheme; it acts as a replacement for the SHA-256 hash function used in Bitcoin
@@ -111,33 +145,62 @@ Our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
 that it acts as a positive use of computational resources. There are some key
 differences, however. In CouncilFS, the aldermen replace the dealer as the
 arbiter of the common dataset. The aldermen decide which members get which
-slices of $D$, rather than having a trusted setup phase. Additionally, because
-the aldermen handle $D$, it can be updated continuously. Both of these points
+slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally, because
+the aldermen handle $\mathcal{D}$, it can be updated continuously. Both of these points
 are discussed further later in the paper.
 
 \subsection{Aldermen}
 
-\subsubsection{File Storage}
+Aldermen constitute the second tier of nodes in CouncilFS. These nodes are
+trusted by the others in the network to provide file distribution and
+logistics services for all of CouncilFS. File storage capabilities are provided
+to \emph{clients}, who pay the aldermen for this distribution service. Other
+nodes in the network can download files from the aldermen as long as this
+payment is made. This extra network responsibility is bootstrapped by the escrow
+of shire tokens and by a selection process. 
 
-\paragraph{Clients.}
+\subsubsection{Selection}
 
-\subsubsection{Electing New Aldermen}
+\subsubsection{Punishment}
 
-\subsubsection{Punishing Misbehaving Aldermen}
+An alderman is expected to behave according to the norms of the protocol. When
+an alderman starts misbehaving, it is in the best interest of the rest of the
+alderman if they catch the misbehavior (assuming the majority of aldermen are
+honest). A deeper analysis of the incentives surrounding alderman behavior is in
+the Discussion section below.
 
-\subsection{The Blockchain}
+Aldermen determine misbehavior by challenging each other on the operations of
+the network. If an alderman can prove to a challenger that it is meeting the
+requirements of the protocol, it can remain in the network; otherwise, it is
+punished by being sent back to the member pool. Implicit to this challenge
+process is the determination of liveness, as a dead alderman will not respond to
+a challenge fast enough.
 
-\subsection{Headings: second level}
-\lipsum[5]
-\begin{equation}
-\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
-\end{equation}
+\subsection{File Distribution}
 
-\subsubsection{Headings: third level}
-\lipsum[6]
+\subsubsection{Common Data Store $\mathcal{D}$}
 
-\paragraph{Paragraph}
-\lipsum[7]
+\subsubsection{Client File Channels}
+
+\subsubsection{File Retrieval}
+
+\section{Evaluation}
+
+\subsection{Implementation}
+
+\subsection{Microbenchmarks}
+
+\section{Discussion}
+
+\paragraph{Incentive Structure.}
+
+\paragraph{Censorship Resistance.}
+
+\paragraph{Trusting the Aldermen.}
+
+\paragraph{Updating $\mathcal{D}$.}
+
+\section{Conclusion}
 
 \section{Examples of citations, figures, tables, references}
 \label{sec:others}
