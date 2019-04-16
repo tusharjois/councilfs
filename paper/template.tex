@@ -93,7 +93,18 @@ less be used to drive distributed storage in a way that penalizes those that
 attempt to cheat clients out of money without of their files and allows for
 discrete sharing of potentially covert information.
 
-\paragraph{Contribution.} We present \textsc{CouncilFS}, a 
+\paragraph{Contribution.} We present \textsc{CouncilFS}, a file distribution
+system with censorship-resistant properties. These properties are incentivized
+with a blockchain-based system that provides payment for distribution services
+rendered. Our contributions are the following:
+\begin{itemize}
+\item A new file distribution system that uses a two-level node hierarchy to
+  bootstrap trust and a blockchain to provide incentives.
+\item A protocol that combines proofs-of-retrieveability, with the
+  notion of payment channels to provide incentivized 
+\item The implementation the proofs-of-retrieveability, client, and alderman code of
+  \textsc{CouncilFS} in the Go programming language. 
+\end{itemize}
 
 
 \section{Related Work}
@@ -112,7 +123,7 @@ There has also been work done previously in the creation of file storage resista
 There are three types of nodes in our network: \emph{members}, \emph{aldermen},
 and \emph{clients}. Members form the backbone of the network; they are the nodes
 that primarily interface with the blockchain. They verify transactions between
-users of the underlying currency of CouncilFS. Aldermen are members of the
+users of the underlying currency of \textsc{CouncilFS}. Aldermen are members of the
 network who have been elected to take on more responsbility in the network.
 Their primary responsbility is to maintain instances of the files that clients
 upload. Clients pay for this privlege, and engage in a protocol to ensure that
@@ -122,8 +133,8 @@ detail in the subsections below.
 
 \subsection{Members}
 
-At the core of the CouncilFS network are members. The underlying token of
-CouncilFS, known as a \emph{shire}, is exchanged between users as transactions.
+At the core of the \textsc{CouncilFS} network are members. The underlying token of
+\textsc{CouncilFS}, known as a \emph{shire}, is exchanged between users as transactions.
 Members organize user transactions into blocks, verify correctness, and perform
 a proof-of-work computation. The computation performed is then compared to a
 difficulty value by all other nodes, and if it is less than this value, the rest
@@ -132,7 +143,7 @@ Consensus, is analgous to the process performed by miners in Bitcoin \cite{btc}.
 
 \subsubsection{Proofs-of-Retrievability}
 
-Unlike Bitcoin miners, however, CouncilFS members perform a
+Unlike Bitcoin miners, however, \textsc{CouncilFS} members perform a
 proof-of-retrieveability (PoR), in which a prover proves that they are able to
 retrieve a file on demand, without transmitting the entire file to a the
 verifier. This PoR is performed by every member on a common dataset $\mathcal{D}$; because
@@ -143,7 +154,7 @@ and related cryptocurrencies.
 
 Our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
 that it acts as a positive use of computational resources. There are some key
-differences, however. In CouncilFS, the aldermen replace the dealer as the
+differences, however. In \textsc{CouncilFS}, the aldermen replace the dealer as the
 arbiter of the common dataset. The aldermen decide which members get which
 slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally, because
 the aldermen handle $\mathcal{D}$, it can be updated continuously. Both of these points
@@ -151,9 +162,9 @@ are discussed further later in the paper.
 
 \subsection{Aldermen}
 
-Aldermen constitute the second tier of nodes in CouncilFS. These nodes are
+Aldermen constitute the second tier of nodes in \textsc{CouncilFS}. These nodes are
 trusted by the others in the network to provide file distribution and
-logistics services for all of CouncilFS. File storage capabilities are provided
+logistics services for all of \textsc{CouncilFS}. File storage capabilities are provided
 to \emph{clients}, who pay the aldermen for this distribution service. Other
 nodes in the network can download files from the aldermen as long as this
 payment is made. This extra network responsibility is bootstrapped by the escrow
