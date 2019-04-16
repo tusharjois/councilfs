@@ -179,19 +179,49 @@ of shire tokens and by a selection process.
   \centering
   \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
   \caption{File channel between a client and an alderman.}
-  \label{fig:fig1}
+  \label{fig:channel}
 \end{figure}
 
 The primary service aldermen provide is a file distribution network for hire.
 Clients engage in a protocol in order to upload a file and provide a constant
-flow of payment to an alderman, as seen in Figure \ref{fig:fig1} above. This
+flow of payment to an alderman This
 protocol, known as a \emph{file channel}, is similar to the off-chain
 transactions developed in previous work such as the payment channels in the
 Lightning Network \cite{lightning}. However, in addition to the payment being
 sent across the channel, the client verifies that the alderman is holding the
-file by performing a PoR for it across the same channel.
+file by performing a PoR for it across the same channel. We use ECDSA in order
+to cryptographically verify the communication between a client and an alderman.
+The initialization part of the protocol is shown in Figure \ref{fig:channel}.
 
-\paragraph{Initialization.}
+\paragraph{Initialization.} When a client wishes to upload a file to an
+alderman, they broadcast the file hash, file size, interval length, and payment
+per interval. The interval is defined in nanoseconds, and refers to the amount
+of clock time that passes before the next payment from the client. The client
+can optionally send the number of intervals that the file should be held
+(\emph{i.e.}, the total amount of time spent with the file). These parameters
+allow an alderman to decide if it is worth their time to store the file the
+client offers to publish. Aldermen that wish to accept the offer send replies to
+the client that state their intent to serve the file. If they wish to counter
+the offer, they can send a response with potential changes to the payment.
+
+After this negotiation between a client and an alderman, the two parties proceed
+to the funding phase. The client creates a 2-of-2 multisig transaction, in which
+both the client and the alderman need to sign the transaction before it is
+accepted as valid. This transaction contains the hash of the file being
+uploaded, the signature on the hash, and the payment parameters of the channel.
+It also defines how much of the client's shire will be held in escrow during the
+channel. If the ``file'' being uploaded is actually the sharded form of a full
+file, this transaction may optionally include the transaction locations of the
+other shards that compose this file. The client then sends this transaction to
+the alderman directly (without broadcasting it) who signs the transaction if the
+client set the parameters properly.
+
+The client broadcasts the transaction to the members. Once the transaction is
+sufficiently deep in the blockchain, the protocol moves into the upload phase.
+The client sends the file to alderman, who stores it on disk after verifying
+the signature on the file. If this signature verification fails or if the file
+is not uploaded in time, the alderman forgets the channel. Else, the alderman
+notifies the client of a successful upload and the channel enters normal operation.
 
 \paragraph{Operation.}
 
@@ -232,6 +262,8 @@ The source code for \textsc{CouncilFS} may be found at
 \section{Discussion}
 
 \paragraph{Incentive Structure.}
+
+\paragraph{Replication.}
 
 \paragraph{Censorship Resistance.}
 
