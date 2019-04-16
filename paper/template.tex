@@ -124,7 +124,7 @@ and \emph{clients}. Members form the backbone of the network; they are the nodes
 that primarily interface with the blockchain. They verify transactions between
 users of the underlying currency of \textsc{CouncilFS}. Aldermen are members of the
 network who have been elected to take on more responsbility in the network.
-Their primary responsbility is to maintain instances of the files that clients
+Their primary responsibility is to maintain instances of the files that clients
 upload. Clients pay for this privlege, and engage in a protocol to ensure that
 the alderman remains honest. Aldermen who are not honest are demoted back to the
 member pool. This general outline of our construction is discussed in more
@@ -223,7 +223,15 @@ the signature on the file. If this signature verification fails or if the file
 is not uploaded in time, the alderman forgets the channel. Else, the alderman
 notifies the client of a successful upload and the channel enters normal operation.
 
-\paragraph{Operation.}
+\paragraph{Operation.} During normal operation, before the current interval has
+expired, the client requests a PoR for the file from the alderman in the open
+channel. The alderman sends a PoR for the file back to the client, and the
+client verifies it. If the verification succeeds, the client sends a new 2-of-2
+multisig transaction that updates the payment to use the escrow funds to pay the
+alderman. The alderman, on receipt of the transaction, resets the interval count
+and holds the uploaded file on disk. If the client sends a closure request, the
+alderman decides that it cannot hold the file anymore, or if the timeout for
+payment expires, the channel moves to a closed state.
 
 \paragraph{Closure.}
 
@@ -263,11 +271,9 @@ The source code for \textsc{CouncilFS} may be found at
 
 \paragraph{Incentive Structure.}
 
-\paragraph{Replication.}
+\paragraph{Replication and Censorship Resistance.}
 
-\paragraph{Censorship Resistance.}
-
-\paragraph{Trusting the Aldermen.}
+\paragraph{Trusting Aldermen.}
 
 \paragraph{Updating $\mathcal{D}$.}
 
