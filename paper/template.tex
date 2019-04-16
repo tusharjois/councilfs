@@ -60,7 +60,6 @@
 
 \section{Introduction}
 
-
 The main purpose of this work is to try and solve the inherent wastefulness in
 popular cryptocurrencies by proposing a proof of work that can be used to
 perform a useful function, in this case, storing files for those who are willing
@@ -93,7 +92,7 @@ less be used to drive distributed storage in a way that penalizes those that
 attempt to cheat clients out of money without of their files and allows for
 discrete sharing of potentially covert information.
 
-\paragraph{Contribution.} We present \textsc{CouncilFS}, a file distribution
+\paragraph{Contributions.} We present \textsc{CouncilFS}, a file distribution
 system with censorship-resistant properties. These properties are incentivized
 with a blockchain-based system that provides payment for distribution services
 rendered. Our contributions are the following:
@@ -168,9 +167,37 @@ logistics services for all of \textsc{CouncilFS}. File storage capabilities are 
 to \emph{clients}, who pay the aldermen for this distribution service. Other
 nodes in the network can download files from the aldermen as long as this
 payment is made. This extra network responsibility is bootstrapped by the escrow
-of shire tokens and by a selection process. 
+of shire tokens and by a selection process.
 
 \subsubsection{Selection}
+
+\subsubsection{Common Data Store $\mathcal{D}$}
+
+\subsubsection{Client File Channels}
+
+\begin{figure}[t]
+  \centering
+  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{File channel between a client and an alderman.}
+  \label{fig:fig1}
+\end{figure}
+
+The primary service aldermen provide is a file distribution network for hire.
+Clients engage in a protocol in order to upload a file and provide a constant
+flow of payment to an alderman, as seen in Figure \ref{fig:fig1} above. This
+protocol, known as a \emph{file channel}, is similar to the off-chain
+transactions developed in previous work such as the payment channels in the
+Lightning Network \cite{lightning}. However, in addition to the payment being
+sent across the channel, the client verifies that the alderman is holding the
+file by performing a PoR for it across the same channel.
+
+\paragraph{Initialization.}
+
+\paragraph{Operation.}
+
+\paragraph{Closure.}
+
+\subsubsection{File Retrieval}
 
 \subsubsection{Punishment}
 
@@ -187,17 +214,18 @@ punished by being sent back to the member pool. Implicit to this challenge
 process is the determination of liveness, as a dead alderman will not respond to
 a challenge fast enough.
 
-\subsection{File Distribution}
+One of the ways misbehavior is detected is by aldermen challenging each other on
+the files they both store.
 
-\subsubsection{Common Data Store $\mathcal{D}$}
-
-\subsubsection{Client File Channels}
-
-\subsubsection{File Retrieval}
 
 \section{Evaluation}
 
 \subsection{Implementation}
+
+The source code for \textsc{CouncilFS} may be found at
+\begin{center}
+  \url{https://github.com/tusharjois/councilfs}
+\end{center}
 
 \subsection{Microbenchmarks}
 
@@ -217,10 +245,6 @@ a challenge fast enough.
 \label{sec:others}
  \cite{permacoin-repurposing-bitcoin-work-for-data-preservation}
 
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
 Of note is the command \verb+\citet+, which produces citations
 appropriate for use in inline text.  For example,
 \begin{verbatim}
@@ -241,12 +265,6 @@ produces
 See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
 \lipsum[11] 
 
-\begin{figure}
-  \centering
-  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
-  \label{fig:fig1}
-\end{figure}
 
 \subsection{Tables}
 \lipsum[12]
