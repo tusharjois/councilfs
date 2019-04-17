@@ -160,6 +160,13 @@ slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally,
 because the aldermen handle $\mathcal{D}$, it can be updated continuously. Both
 of these points are discussed further later in the paper.
 
+\begin{figure}[t]
+  \centering
+  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{Structure of the PoR employed by a member.}
+  \label{fig:por-member}
+\end{figure}
+
 \subsection{Aldermen}
 
 Aldermen constitute the second tier of nodes in \textsc{CouncilFS}. These nodes
@@ -179,11 +186,43 @@ income other than a part of the block reward.
 
 \subsubsection{Selection}
 
-Static IP Addr
-1000 Shire
-Sybil Attacks
+The selection process defines how an member becomes an alderman. A member
+becomes an alderman after posting a \emph{selection transaction} to the
+blockchain. Such a transaction validates that the member has met the
+prerequisites for becoming an aldermen. After this transaction is confirmed in
+the blockchain (\emph{i.e.}, deep in the longest chain), then the other aldermen
+consider the member an alderman.
+
+The biggest prerequisite for joining the network is the accumulation of 100,000
+shire. This significant investment ensures that the alderman participates in the
+network correctly, as the value of their investment fluctuates with the success
+of the network. It also restricts the possibility of a Sybil attack to
+compromise the alderman network. Because of the fixed growth rate of shire (in a
+typical implementation), there will be a limit on the total number of
+
+There are also practical requirements for the aldermen to satisfy. One of them
+is to maintain strong bandwidth and a static IP address. This allows for members
+to download the common data store for PoRs and for clients to upload and
+download files, as described below. They also must respond to pings on their IP
+address to demonstrate liveness. The alderman should also have sufficient disk
+space to store files; the aldermen must store the entire common data store and
+(potentially) the files that clients wish to upload.
 
 \subsubsection{Common Data Store $\mathcal{D}$}
+
+Aldermen are responsible for handling and dividing up the common data store
+$\mathcal{D}$. This dataset is something with high public value, such as data
+from the Internet Archive or from Wikipedia. Each alderman holds a full copy of
+this dataset, split into shards. When a member wishes to join
+\textsc{CouncilFS}, the alderman gives specific shards to the new member based
+on the current state of the network. Aldermen attempt to distribute the file
+randomly, such that all shards of $\mathcal{D}$ are equally distributed.
+
+The dataset cannot be updated in place. This is because changes to the dataset
+may break the validity of PoRs already on the blockchain. However, the dataset
+can be appended to, as members are only given shards of the full dataset to
+store. When the members wish to operate on the new segments that were appended
+to $\mathcal{D}$, they simply download them from the aldermen.
 
 \subsubsection{Client File Channels}
 
