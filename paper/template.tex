@@ -176,12 +176,6 @@ of ``masternodes'' in cryptocurrencies such as Dash \cite{dash-coin}, but
 aldermen in \textsc{CouncilFS} have different responsibilities and additional
 sources of income other than a part of the block reward.
 
-\subsubsection{Selection}
-
-Static ip address
-1000 Shire 
-Additional funds?
-
 \subsubsection{Common Data Store $\mathcal{D}$}
 
 \subsubsection{Client File Channels}
@@ -298,21 +292,40 @@ honest). A deeper analysis of the incentives surrounding alderman behavior is in
 the Discussion section below.
 
 \paragraph{Client-side.} A client can detect alderman misbehavior easily. There
-are two ways alderman can misbehave: no storing the file provided by the client,
+are two ways alderman can misbehave: not storing the file provided by the client,
 and not allowing user downloads of the file. Clients can issue challenges to
 isolate misbehavior. Implicit to this challenge process is the determination of
 liveness, as a dead alderman will not respond to a challenge fast enough.
 
+In the first misbehavior case, the alderman does not hold the uploaded file.
+This however, is easily detectable: if the PoR sent across the channel during a
+payment interval does not validate, the client can simply close the channel.
+Thus, the alderman no longer gets paid, as it did not perform the service as
+negotiated. In the second case, users cannot download the file as held by the
+alderman. In order to detect this, other users should notify the client
+out-of-band that this is occurring, or the client can verify for themselves by
+attempting to download the full file from the alderman during a payment
+interval. Once again, if the alderman fails this challenge, the client can
+simply close the channel.
+
+Blacklisting is a powerful tool that clients have to punish chronic misbehavior.
+If an alderman continues to cheat clients, clients can stop responding to their
+offers, and add them to a blacklist. As more and more clients add said alderman
+to their blacklists, the alderman is effectively shunned from the network due to
+their behavior. This means the significant resources the alderman devoted to
+selection goes to waste as a result of this punishment.
+
 \paragraph{Alderman-side.} Aldermen also verify each others' operation in the
-network.
+network. If an alderman can prove to a challenger that it is meeting the
+requirements of the protocol, it can remain in the network; otherwise, it is
+punished by being sent back to the member pool. This type of punishment is even
+more severe, as it is enforced by the protocol itself.
 
 
 DASH QUORUM? 
 
 Aldermen determine misbehavior by challenging each other on the operations of
-the network. If an alderman can prove to a challenger that it is meeting the
-requirements of the protocol, it can remain in the network; otherwise, it is
-punished by being sent back to the member pool. 
+the network.  
 One of the ways misbehavior is detected is by aldermen challenging each other on
 the files they both store. To achieve the property of resiliency, clients should
 replicate their file across several aldermen. Other aldermen can detect this by
@@ -338,7 +351,7 @@ The source code for \textsc{CouncilFS} may be found at
 
 \section{Discussion}
 
-\paragraph{Incentive Structure.}
+\paragraph{Incentive Structure.} Significant investment, so play by the rules
 
 \paragraph{Replication and Censorship Resistance.} Delegation?
 
