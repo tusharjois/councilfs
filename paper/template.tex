@@ -110,7 +110,7 @@ rendered. Our contributions are the following:
 \subsection{Alternative Proofs of Work}
 Our work exists at the cross-section of many different active fields of research. Before this paper, there have been many proposals for Proof-of-Work schemes that serve some useful function or purpose like PrimeCoin. In a previous paper, there has also been a proposal to utilize a POR as a proof of work for the purpose of storing archival information that would be known by all miners so that validation of the files could be assured $\mathcal{D}$. The authors also assume that this file would not be updated and introduce a new stateful signature scheme that should be relatively efficient while also ensuring that a miner cannot "outsource" their computation. This differs from our scheme as we allow for the existence of other files carried by clients that are given directly to trusted nodes, called \emph{Alderman}, and are not verifiable by every single node on the network.\\
 
-Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation open and then answer challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a form of pebbling and pebble the spaces and prove something about the graph to a verifier. One popular Proof of Space is spacemint which is unique in that it implements two different blockchains and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol in ways that are unlikely to happen if Proof of Work algorithms (for example, nothing at stake problems and block/challenge grinding). In our future work, we propose a similar kind of punishment mechanism. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history either. 
+Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation open and then answer challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a form of pebbling and pebble the spaces and prove something about the graph to a verifier. One popular Proof of Space is spacemint which is unique in that it implements two different blockchains and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol in ways that are unlikely to happen if Proof of Work algorithms (for example, nothing at stake problems and block/challenge grinding). In our future work, we propose a similar kind of punishment mechanism. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history either.
 
 \subsection{Censorship Resistant File Storage}
 There has also been work done previously in the creation of file storage resistant to the takedown of particular governments and agencies. Publius, for example, was proposed as a method of resistance in which n servers host the encrypted content but in order to get the key a client must obtain k-out-of-n secret shares that are also controlled by these servers. While there is plausible deniability on the part of the servers, as they are hosting encrypted material, there is no mechanism or recompense in place for servers electing to delete their shares and no way to communicate this information to all of the other servers readily on the network. What this paper attempts to do is fundamentally different as we not only want to provide a mechanism by which servers can help dissidents/clients but we want to provide them an incentive to do so as well. Namely, in the form of currency. 
@@ -167,14 +167,21 @@ are trusted by the others in the network to provide file distribution and
 logistics services for all of \textsc{CouncilFS}. File storage capabilities are
 provided to \emph{clients}, who pay the aldermen for this distribution service.
 Other nodes in the network can download files from the aldermen as long as this
-payment is made. For the members, . This extra network responsibility is
-bootstrapped by the escrow of shire tokens and by a selection process. In
-addition to the shire clients pay to store files, aldermen (as a pool) earn 15\%
-of the block reward from a newly-mined block for the additional responsibility
-they take on from the network. This two-level system is similar to the concept
-of ``masternodes'' in cryptocurrencies such as Dash \cite{dash-coin}, but
-aldermen in \textsc{CouncilFS} have different responsibilities and additional
-sources of income other than a part of the block reward.
+payment is made. For the members, the provide the common data store used in the
+PoR. This extra responsibility requires trust, which is bootstrapped by the
+escrow of shire tokens and by a selection process. In addition to the shire
+clients pay to store files, aldermen (as a pool) earn 15\% of the block reward
+from a newly-mined block for the additional responsibility they take on from the
+network. This two-level system is similar to the concept of ``masternodes'' in
+cryptocurrencies such as Dash \cite{dash-coin}, but aldermen in
+\textsc{CouncilFS} have different responsibilities and additional sources of
+income other than a part of the block reward.
+
+\subsubsection{Selection}
+
+Static IP Addr
+1000 Shire
+Sybil Attacks
 
 \subsubsection{Common Data Store $\mathcal{D}$}
 
@@ -315,28 +322,36 @@ to their blacklists, the alderman is effectively shunned from the network due to
 their behavior. This means the significant resources the alderman devoted to
 selection goes to waste as a result of this punishment.
 
-\paragraph{Alderman-side.} Aldermen also verify each others' operation in the
-network. If an alderman can prove to a challenger that it is meeting the
-requirements of the protocol, it can remain in the network; otherwise, it is
-punished by being sent back to the member pool. This type of punishment is even
-more severe, as it is enforced by the protocol itself.
+\paragraph{Alderman-side.} Aldermen determine misbehavior by challenging each
+other on the operations of the network. If an alderman can prove to a challenger
+that it is meeting the requirements of the protocol, it can remain in the
+network; otherwise, it is punished by being sent back to the member pool. This
+type of punishment is even more severe, as it is enforced by the protocol
+itself.
 
+To detect misbehavior, aldermen challenge each other on the files they store. To
+achieve the property of resiliency, clients will replicate their file across
+several aldermen. Other aldermen can detect this by reading the file information
+off the blockchain, by looking at the funding transaction for a file channel.
+Additionally, aldermen challenge each other on the common dataset $\mathcal{D}$
+that they distribute to the members of the protocol.
 
-DASH QUORUM? 
+Every block, two \emph{boards} of aldermen are selected. The first board, Board
+A, checks every node on in the second board, Board B. The first check they
+perform is a ping check to verify the alderman is up and responsive. The next
+check is to retrieve a client's file from the alderman. The final check is a
+PoR on $\mathcal {D}$, which Board A should already have a copy. Every passed
+check gives an alderman \emph{merits}, while failed ones take merits away. At a
+certain threshold of merits, the alderman is kicked back to the general member
+pool.
 
-Aldermen determine misbehavior by challenging each other on the operations of
-the network.  
-One of the ways misbehavior is detected is by aldermen challenging each other on
-the files they both store. To achieve the property of resiliency, clients should
-replicate their file across several aldermen. Other aldermen can detect this by
-reading the file information off the blockchain, as the funding transaction that
-.
-
-In case clients are cheated by a misbehaving alderman before a quorum occurs, a
-client can blacklist an alderman by public key. Sybil attacks are more difficult
-for aldermen, as it takes significant resources to become in alderman in the
-first place. Because the next alderman election happens after the quorum
-process, blacklisting the 
+The random selection of the boards ensures that the attacker must be selected
+every time in order to continuously trick the system. As such, this probabilistic
+nature makes attacks against the alderman pool very unlikely. More checks can be
+added as the network evolves. This structure is inspired by proofs-of-service
+\cite{proof-of-service} found in other cryptocurrencies. \textsc{CouncilFS} goes
+beyond this by requiring nodes to not only be online, but actively participating
+in the greater functionality of the network.
 
 \section{Evaluation}
 
