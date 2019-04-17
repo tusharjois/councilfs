@@ -173,6 +173,7 @@ of shire tokens and by a selection process.
 \subsubsection{Selection}
 
 Static ip address
+1000 Shire 
 
 \subsubsection{Common Data Store $\mathcal{D}$}
 
@@ -247,14 +248,22 @@ payment in the channel.
 
 \subsubsection{File Retrieval}
 
-Other users of \textsc{CouncilFS} can download files from aldermen relatively
-easily. The transaction ID of the funding transaction is the only information
-necessary to find a file, since a user can read off the authentication
-information (such as signature and uploader public key) along with location in
-the alderman network (alderman public key) directly off the blockchain. In
-practice, the client can post the absolute location of the funding transaction
-so other users do not have to iterate through the whole blockchain to find file
-information. 
+Allowing other users of \textsc{CouncilFS} to download files is one of the
+responsibilities of aldermen. The transaction ID of the funding transaction is
+the only information necessary to find a file, since a user can read off the
+authentication information (such as signature and uploader public key) along
+with location in the alderman network (alderman public key) directly off the
+blockchain. In practice, the client can post the absolute location of the
+funding transaction so other users do not have to iterate through the whole
+blockchain to find file information.
+
+Based on the election criteria denoted above, every alderman must have a static
+IP address that is recorded on chain. So, once the user finds the location of
+the file, they can resolve the IP address associated with that public key by
+looking on the blockchain. They then use that IP address to make a request to
+the alderman for a file pointed to by a particular transaction ID. The alderman,
+using its mapping of transaction IDs to channels, finds the file to which the ID
+refers and retrieves it for the user.
 
 The user can assume that the file referenced by a funding transaction is
 available at the alderman until a payment transaction is posted to the
@@ -262,15 +271,15 @@ blockchain. This parallels the state of the file channel between a client and an
 alderman: it opens when the funding transaction is posted, and closed when a
 payment transaction is posted. If the alderman is in the middle of receiving or
 deleting a file, it can return such a status to the user, even if the
-transaction that supports this claim has not been posted to the chain.
+transaction that supports this claim has not been posted to the chain. 
 
-Note that the client does not need to strictly have the file on disk in order to
-validate the file during normal channel operation. They can request the file
-from the alderman as a normal user and verify it against both the signature
-stored on the blockchain and the PoR sent over by the alderman. This alternative
-method, although more bandwidth-intensive, is useful as a tool against
-censorship; a client can send a restricted document to an alderman and retrieve
-it when it is safe to do so.
+Note that this structure means that client does not need to strictly have the
+file on disk in order to validate the file during normal channel operation
+(above). They can request the file from the alderman as a normal user and verify
+it against both the signature stored on the blockchain and the PoR sent over by
+the alderman. This alternative method, although more bandwidth-intensive, is
+useful as a tool against censorship; a client can send a restricted document to
+an alderman and retrieve it when it is safe to do so.
 
 
 \subsubsection{Punishing Misbehavior}
@@ -281,13 +290,18 @@ alderman if they catch the misbehavior (assuming the majority of aldermen are
 honest). A deeper analysis of the incentives surrounding alderman behavior is in
 the Discussion section below.
 
+A client can detect alderman misbehavior easily. There are two ways alderman can
+misbehave: no storing the file provided by the client, and not allowing user
+downloads of the file. Clients can issue challenges to isolate misbehavior.
+Implicit to this challenge process is the determination of liveness, as a dead
+alderman will not respond to a challenge fast enough.
+
+Aldermen also verify each others' operation in the network.
+
 Aldermen determine misbehavior by challenging each other on the operations of
 the network. If an alderman can prove to a challenger that it is meeting the
 requirements of the protocol, it can remain in the network; otherwise, it is
-punished by being sent back to the member pool. Implicit to this challenge
-process is the determination of liveness, as a dead alderman will not respond to
-a challenge fast enough.
-
+punished by being sent back to the member pool. 
 One of the ways misbehavior is detected is by aldermen challenging each other on
 the files they both store. To achieve the property of resiliency, clients should
 replicate their file across several aldermen. Other aldermen can detect this by
@@ -317,7 +331,7 @@ The source code for \textsc{CouncilFS} may be found at
 
 \paragraph{Replication and Censorship Resistance.}
 
-\paragraph{Trusting Aldermen.}
+\paragraph{Trusting Aldermen.} Privacy concerns -- encryption
 
 \paragraph{Updating $\mathcal{D}$.}
 
