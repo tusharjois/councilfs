@@ -26,7 +26,7 @@ func (enc *EncodedDataset) Length() uint {
 }
 
 func computeTreeRoot(shards [][]byte) []byte {
-	var calculateTreeRoot [len(shards)][]byte
+	calculateTreeRoot := make([][]byte, len(shards))
     var length = len(shards)
     for i := 0; i <= length; i++ {
         hashNode := sha256.Sum256(shards[i])
@@ -36,7 +36,7 @@ func computeTreeRoot(shards [][]byte) []byte {
     	j := 0
         for i := 0; i <= length - 1; i+=2 {
         	if i + 1 >= length {
-                calculateTreeRoot[j] = createTreeRoot[i]
+                calculateTreeRoot[j] = calculateTreeRoot[i]
                 j += 1
         	} else {
         		combine := append(calculateTreeRoot[i], calculateTreeRoot[i+1]...)

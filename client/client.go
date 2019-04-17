@@ -40,6 +40,8 @@ const (
 	// still holding the file they said they would be
     PORRequest
 
+    // PORResponse is sent when an Alderman is trying to respond to a POR request 
+    // made by a client. 
     PORResponse
 
 	// SendPayment is sent when the client wants to send payment to the alderman
@@ -59,13 +61,13 @@ const (
 // PaymentChannel is a representation of the channel between a client and an
 // alderman.
 type PaymentChannel struct {
-	channelID         []byte
-	clientPublicKey   []byte
-	aldermanPublicKey []byte
-	blockchainState   []byte
-	payment           uint
-	interval          time.Duration
-	messages          []*ChannelMessage
+	ChannelID         []byte
+	ClientPublicKey   []byte
+	AldermanPublicKey []byte
+	BlockchainState   []byte
+	Payment           uint
+	Interval          time.Duration
+	Messages          []*ChannelMessage
 	Encoding          *por.EncodedDataset
 }
 
@@ -83,11 +85,41 @@ type ChannelMessage struct {
 
 // GetPayload returns the MessageType of the ChannelMessage and the associated payload.
 func (msg *ChannelMessage) GetPayload() (MessageType, []byte, error) {
+	// check the signature on the message 
+
 	return msg.mType, msg.payload, nil // TODO: Verification
 }
 
+func (msg *ChannelMessage) GetSenderKey() []byte {
+	return msg.senderPublicKey
+}
+
+func (pay *PaymentChannel) GetMostRecent() *ChannelMessage {
+	return pay.Messages[len(pay.Messages) - 1]
+}
+
+func (pay *PaymentChannel) GetID() []byte {
+	return pay.ChannelID[:]
+}
+
+func (msg *ChannelMessage) GetID() []byte{
+	return msg.channelID[:];
+}
+
+func (pay *PaymentChannel) GetInterval() time.Duration {
+	return pay.Interval
+}
+
+func (pay *PaymentChannel) UpdateMessages(msg *ChannelMessage) {
+	pay.Messages = append(pay.Messages, msg)
+}
+
+func (pay *PaymentChannel) DebugPrint() {
+    fmt.Printf("%v\n", pay.Messages)
+}
+
 // NewMessage creates a ChannelMessage with specified parameters. TODO: Add more description.
-func NewMessage(mType MessageType, v interface{}, channelID []byte, signingKey *ecdsa.PrivateKey, prev *ChannelMessage) *ChannelMessage {
+func NewMessage(mType MessageType, v interface{},channelID []byte, signingKey *ecdsa.PrivateKey, prev *ChannelMessage) *ChannelMessage {
 	jsonPayload, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
@@ -117,25 +149,30 @@ func NewMessage(mType MessageType, v interface{}, channelID []byte, signingKey *
 
 	newMessage := &ChannelMessage{
 		mType:           mType,
-		channelID:       channelID,
+		channelID:       [CLIENTIDSIZE]byte{},
 		signature:       []byte(fmt.Sprintf("(%d,%d)", r, s)),
 		senderPublicKey: publicKeyBytes,
 		payload:         jsonPayload,
 		prevHash:        prevHash,
 	}
-
-	copy(newMessage.channelID, channelID)
+    
+    if len(channelID) < 0 {
+    	panic("Attempted overflow???")
+    }
+    if uint(len(channelID)) != CLIENTIDSIZE {
+    	panic("Channel ID is of incorrect size")
+    }
+	copy(newMessage.channelID[:],channelID)
 
 	return newMessage
 }
 
 // OpenChannel creates a new PaymentChannel between a client and an alderman.
 func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, payment uint,
-	paymentInterval time.Duration, encoding *por.EncodedDataset) (*PaymentChannel, *ChannelMessage) {
-
+	paymentInterval time.Duration, encoding *por.EncodedDataset) (*PaymentChannel, *ChannelMessage, por.EncodedDataset) {
 	newChannel := new(PaymentChannel)
-	newChannel.channelID = make([]byte, 128)
-	_, err := rand.Read(newChannel.channelID)
+	newChannel.ChannelID = make([]byte, 128)
+	_, err := rand.Read(newChannel.ChannelID)
 	if err != nil {
 		panic(err)
 	}
@@ -144,39 +181,80 @@ func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, paym
 	if err != nil {
 		panic(err)
 	}
-	newChannel.clientPublicKey = clientKeyBytes
-
+	newChannel.ClientPublicKey = clientKeyBytes
+    
 	aldermanKeyBytes, err := x509.MarshalPKIXPublicKey(aldermanKey)
 	if err != nil {
 		panic(err)
 	}
-	newChannel.aldermanPublicKey = aldermanKeyBytes
+	newChannel.AldermanPublicKey = aldermanKeyBytes
 
-	newChannel.payment = payment
-	newChannel.interval = paymentInterval
+	newChannel.Payment = payment
+	newChannel.Interval = paymentInterval
 
 	// Note that this can become nil after the file is uploaded
+	// can't do this in a regular networking setting
 	newChannel.Encoding = encoding
-	newChannel.blockchainState = make([]byte, 6)
-	newMessage := NewMessage(ChannelOpen, newChannel, newChannel.channelID, clientKey, nil)
+	newChannel.BlockchainState = make([]byte, 6)
+	newMessage := NewMessage(ChannelOpen, newChannel, newChannel.ChannelID, clientKey, nil)
 
-	newChannel.messages = make([]*ChannelMessage, 0)
-	newChannel.messages = append(newChannel.messages, newMessage)
+	newChannel.Messages = make([]*ChannelMessage, 0)
+	newChannel.Messages = append(newChannel.Messages, newMessage)
 
-	return newChannel, newMessage
+	return newChannel, newMessage, *encoding
 }
 
-// Engage allows the client to participate in the PaymentChannel.
-func (pay *PaymentChannel) Engage(proof []byte, clientKey *ecdsa.PrivateKey) *ChannelMessage {
+// VerifyPOR checks that an alderman is actually holding the file they clain to be 
+// [the POR is correctly computed]
+func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey) *ChannelMessage {
+	_,clientMsg, err := pay.Messages[len(pay.Messages)-1].GetPayload()
+	
+	if err != nil {
+		panic(err)
+	}
+	
 	if pay.Encoding != nil {
-		if !por.VerifyPOR(pay.Encoding, pay.blockchainState, proof, pay.Encoding.Length()) {
-			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.channelID, clientKey, pay.messages[len(pay.messages)-1])
-			pay.messages = append(pay.messages, closeMessage)
+		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, clientMsg, pay.Encoding.Length()) {
+			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
+			pay.Messages = append(pay.Messages, closeMessage)
 			return closeMessage
 		}
 	}
 
-	payMessage := NewMessage(SendPayment, pay.payment, pay.channelID, clientKey, pay.messages[len(pay.messages)-1])
-	pay.messages = append(pay.messages, payMessage)
+	payMessage := NewMessage(SendPayment, pay.Payment, pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
+	pay.Messages = append(pay.Messages, payMessage)
 	return payMessage
+}
+
+// RequestPOR done by client 
+func (pay *PaymentChannel) RequestPOR(clientKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
+	// because the client is requesting the POR, they choose the challenge and there is no
+	// puzzle value
+	// provide list of indices to test on 
+	var identifierstring []byte = make([]byte, 10)
+	_, err := rand.Read(identifierstring)
+	if err != nil {
+		panic(err)
+	}
+	
+	challenge := NewMessage(PORRequest, identifierstring, pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
+    pay.Messages = append(pay.Messages, challenge)
+	return challenge
+}
+
+func (pay *PaymentChannel) RespondToPOR(aldermanKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
+	lastMessage := pay.Messages[len(pay.Messages)-1]
+    
+	if msgType, payload, _ := lastMessage.GetPayload(); msgType == PORRequest {
+        // use the payload as the challenge for the POR
+        // TODO ask TUshar if we want go tie the blockchainVal to the payment 
+        // channel... 
+        proofToSend := por.ProducePOR(aldermanKey, pay.BlockchainState, pay.Encoding, k, payload)
+        message := NewMessage(PORResponse, &proofToSend, pay.ChannelID, aldermanKey, lastMessage)
+	    pay.Messages = append(pay.Messages, message)
+	    return message
+	} else {
+		// code was called with the wrong input
+		panic("Received bad input -- message was not for a POR")
+	}
 }

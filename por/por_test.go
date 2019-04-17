@@ -23,7 +23,7 @@ func TestPOR(test *testing.T) {
 	difficulty := big.NewInt(0)
 	difficulty.Exp(big.NewInt(2), big.NewInt(250), nil) 
     proof := AttemptedMine(generatedMinerKey, blockchainVal, testFileShard, uint(5), difficulty)
-	if !VerifyPOR(testFileShard, blockchainVal, proof, uint(5), difficulty) {
+	if !VerifyPOR(testFileShard, blockchainVal, proof, uint(5)) {
 		test.Errorf("Correctly generated POR was not able to verify")
 	}
 

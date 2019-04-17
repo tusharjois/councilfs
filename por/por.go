@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"crypto/rand"
 )
 
 // Information needed for each file in the POR. FileSegment is the actual data of the 
@@ -32,6 +32,9 @@ type Ticket struct {
 }
 
 func calculateFileIndex(hashString [32]byte, numberShards int64) int64 {
+	if numberShards == 0 {
+		panic("There should be at least one shard")
+	}
 	return big.NewInt(0).Mod(big.NewInt(0).SetBytes(hashString[:]), big.NewInt(numberShards)).Int64()
 }
 
@@ -46,6 +49,41 @@ func checkForWinningTicket(blockchainVal []byte, ticket []byte, difficultyParam 
     }
 }
 
+func TicketMarshal(ticket Ticket) []byte{
+    finalTicket, err := json.Marshal(ticket)
+	if err != nil {
+		panic(err)
+	}
+	return finalTicket
+}
+
+func SignAndMarshal(minerKey *ecdsa.PrivateKey, message[]byte) []byte{
+	r, s, error := ecdsa.Sign(rand.Reader, minerKey, message[:])
+	if error != nil {
+		panic(error)
+	}
+
+	sigCurrent := []byte(fmt.Sprintf("(%d,%d)", r, s))
+
+	return sigCurrent
+}
+
+func VerifyAndUnMarshal(minerKey *ecdsa.PublicKey, message []byte, sig []byte) bool {
+    var r, s *big.Int = big.NewInt(0), big.NewInt(0)
+	sigScan := bytes.NewReader(sig)
+	_, err := fmt.Fscanf(sigScan, "(%d,%d)", r, s)
+	if err != nil {
+		panic(err)
+	}
+	sigCheck := ecdsa.Verify(minerKey, message[:], r, s)
+
+	if !sigCheck {
+		return false
+		//panic("Failed signature check")
+	} else {
+		return true
+	}
+}
 // Actual mining function. This function will attempt to find a ticket that when hashed with blockchainVal produces an integer value less than the difficulty
 // parameter. When it finds such a value, it will return the ticket. blockchainVal is a byte string v || B_l || MR(x) || T where
 // v = version number
@@ -61,8 +99,8 @@ func AttemptedMine(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles
     	}
 
         potentialTicket := ProducePOR(minerKey, blockchainVal, storedFiles, numberSegments, seed)
-        if checkForWinningTicket(blockchainVal, potentialTicket, difficultyParam) {
-        	return potentialTicket
+        if checkForWinningTicket(blockchainVal, TicketMarshal(potentialTicket), difficultyParam) {
+        	return TicketMarshal(potentialTicket)
         }
     }
 
@@ -82,7 +120,7 @@ func VerifyMine(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte
 // by a miner if it fulfills the difficulty parameter. blockchainVal is equivalent to the blockchainVal described in AttemptedMine and
 // seed is a random value that makes the ticket effectively random (so that any group of transactions with at least one seed could be used
 // to produce a valid ticket)
-func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *EncodedDataset, k uint, seed []byte) []byte {
+func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *EncodedDataset, k uint, seed []byte) Ticket {
 	publicKeyAsBytes, error := x509.MarshalPKIXPublicKey(&minerKey.PublicKey)
 	if error != nil {
 		panic(error)
@@ -102,15 +140,9 @@ func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *E
 	for ; i < k; i++ {
 		hashStr = append(idStr, sigCurrent...)
 		hashStr = append(hashStr, storedFiles.shards[currentFile]...)
-
 		currentHash := sha256.Sum256(hashStr)
 
-		r, s, error = ecdsa.Sign(rand.Reader, minerKey, currentHash[:])
-		if error != nil {
-			panic(error)
-		}
-
-		sigCurrent = []byte(fmt.Sprintf("(%d,%d)", r, s))
+		sigCurrent = SignAndMarshal(minerKey, currentHash[:])
 		addFileinfo := FileInfo{FileSegment: storedFiles.shards[currentFile], Signature: sigCurrent, MerkleProof: storedFiles.hashes[currentFile]}
 		ticket.ProofFiles[i] = addFileinfo
 		// note this is problematic right now because it could select the same value twice
@@ -118,11 +150,15 @@ func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *E
 		strShaRes = sha256.Sum256(hashStr)
 		currentFile = calculateFileIndex(strShaRes, int64(len(storedFiles.shards)))
 	}
+
+	return ticket 
+	/*
 	finalTicket, err := json.Marshal(ticket)
 	if err != nil {
 		panic(err)
 	}
 	return finalTicket
+	*/
 }
 
 // Takes in a ticket as a byte string and then parses it to produce a ticket object
@@ -142,7 +178,7 @@ func ParseTicket(ticket []byte) *Ticket {
 // 1) the POR was created with the correct blockchainVal [it matches the previous block in history]
 // 2) the included files are segments of the fileDigests held by the verifier
 // 3) the final value passes the publicly known difficulty parameter Z
-func VerifyPOR(rootFileDigest [32]byte, blockchainVal []byte, ticket []byte, k uint) bool {
+func VerifyPOR(fileDigests *EncodedDataset , blockchainVal []byte, ticket []byte, k uint) bool {
 	structuredTicket := ParseTicket(ticket)
 	// validate the ticket
 	s, r := big.NewInt(0), big.NewInt(0)
@@ -164,11 +200,9 @@ func VerifyPOR(rootFileDigest [32]byte, blockchainVal []byte, ticket []byte, k u
 	currentFile := calculateFileIndex(shaRes, int64(len(fileDigests.shards)))
 	var i uint
 	for ; i < k; i++ {
-
 		currFileInfo := structuredTicket.ProofFiles[i]
 		hashStr = append(idStr, currentSig...)
 		hashStr = append(hashStr, fileDigests.shards[i]...)
-
 		currentHash := sha256.Sum256(hashStr)
         // the merkle proof right now is basically just a hash of the segment. 
         // so there are two ways to do this: have the verifier hold more information
@@ -177,18 +211,12 @@ func VerifyPOR(rootFileDigest [32]byte, blockchainVal []byte, ticket []byte, k u
 			return false
 			//panic("File segment of Verifier does not match Prover's file")
 		}
-		var r, s *big.Int = big.NewInt(0), big.NewInt(0)
-		sigScan := bytes.NewReader(currFileInfo.Signature)
-		_, err = fmt.Fscanf(sigScan, "(%d,%d)", r, s)
-		if err != nil {
-			panic(err)
-		}
-		sigCheck := ecdsa.Verify(minersKey, currentHash[:], r, s)
 
-		if !sigCheck {
-			return false
-			//panic("Failed signature check")
+        //fmt.Printf("Verifier Hash and Sig %v and %v\n", currentHash[:], currFileInfo.Signature)
+		if !VerifyAndUnMarshal(minersKey, currentHash[:], currFileInfo.Signature) {
+            return false
 		}
+		
 		// note this is problematic right now because it could select the same value twice
 		currentSig = currFileInfo.Signature
 		hashStr = append(idStr, currentSig...)
