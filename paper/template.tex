@@ -132,40 +132,41 @@ detail in the subsections below.
 
 \subsection{Members}
 
-At the core of the \textsc{CouncilFS} network are members. The underlying token of
-\textsc{CouncilFS}, known as a \emph{shire}, is exchanged between users as transactions.
-Members organize user transactions into blocks, verify correctness, and perform
-a proof-of-work computation. The computation performed is then compared to a
-difficulty value by all other nodes, and if it is less than this value, the rest
-of the network accepts a member's block. This process, known as Nakamoto
-Consensus, is analgous to the process performed by miners in Bitcoin \cite{btc}.
+At the core of the \textsc{CouncilFS} network are members. The underlying token
+of \textsc{CouncilFS}, known as a \emph{shire}, is exchanged between users as
+transactions. Members organize user transactions into blocks, verify
+correctness, and perform a proof-of-work computation. The computation performed
+is then compared to a difficulty value by all other nodes, and if it is less
+than this value, the rest of the network accepts a member's block. This process,
+known as Nakamoto Consensus, is analgous to the process performed by miners in
+Bitcoin \cite{btc}.
 
 \subsubsection{Proofs-of-Retrievability}
 
 Unlike Bitcoin miners, however, \textsc{CouncilFS} members perform a
 proof-of-retrieveability (PoR), in which a prover proves that they are able to
 retrieve a file on demand, without transmitting the entire file to a the
-verifier. This PoR is performed by every member on a common dataset $\mathcal{D}$; because
-this dataset is common, each other member in the network acts a verifier. The
-PoR is computationally intensive, and is still fundamentally a proof-of-work
-scheme; it acts as a replacement for the SHA-256 hash function used in Bitcoin
-and related cryptocurrencies.
+verifier. This PoR is performed by every member on a common dataset
+$\mathcal{D}$; because this dataset is common, each other member in the network
+acts a verifier. The PoR is computationally intensive, and is still
+fundamentally a proof-of-work scheme; it acts as a replacement for the SHA-256
+hash function used in Bitcoin and related cryptocurrencies.
 
 Our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
 that it acts as a positive use of computational resources. There are some key
-differences, however. In \textsc{CouncilFS}, the aldermen replace the dealer as the
-arbiter of the common dataset. The aldermen decide which members get which
-slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally, because
-the aldermen handle $\mathcal{D}$, it can be updated continuously. Both of these points
-are discussed further later in the paper.
+differences, however. In \textsc{CouncilFS}, the aldermen replace the dealer as
+the arbiter of the common dataset. The aldermen decide which members get which
+slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally,
+because the aldermen handle $\mathcal{D}$, it can be updated continuously. Both
+of these points are discussed further later in the paper.
 
 \subsection{Aldermen}
 
-Aldermen constitute the second tier of nodes in \textsc{CouncilFS}. These nodes are
-trusted by the others in the network to provide file distribution and
-logistics services for all of \textsc{CouncilFS}. File storage capabilities are provided
-to \emph{clients}, who pay the aldermen for this distribution service. Other
-nodes in the network can download files from the aldermen as long as this
+Aldermen constitute the second tier of nodes in \textsc{CouncilFS}. These nodes
+are trusted by the others in the network to provide file distribution and
+logistics services for all of \textsc{CouncilFS}. File storage capabilities are
+provided to \emph{clients}, who pay the aldermen for this distribution service.
+Other nodes in the network can download files from the aldermen as long as this
 payment is made. This extra network responsibility is bootstrapped by the escrow
 of shire tokens and by a selection process.
 
@@ -229,15 +230,32 @@ channel. The alderman sends a PoR for the file back to the client, and the
 client verifies it. If the verification succeeds, the client sends a new 2-of-2
 multisig transaction that updates the payment to use the escrow funds to pay the
 alderman. The alderman, on receipt of the transaction, resets the interval count
-and holds the uploaded file on disk. If the client sends a closure request, the
-alderman decides that it cannot hold the file anymore, or if the timeout for
-payment expires, the channel moves to a closed state.
+and holds the uploaded file on disk.
 
-\paragraph{Closure.}
+Note that the client does not need to strictly have the file on disk in order to
+validate the file. They can request the file from the alderman (as seen in the
+section below) and verify it against both the signature stored on the
+blockchain and the PoR sent over by the alderman. This alternative method,
+although more bandwidth-intensive, is useful as a tool against censorship; a
+client can send a restricted document to an alderman and retrieve it when it is
+safe to do so.
+
+\paragraph{Closure.} If the client sends a closure request, the alderman decides
+that it cannot hold the file anymore, or if the timeout for payment expires, the
+channel moves to a closed state. Either party can initiate the closure by
+posting the latest multisig transaction from the channel to the blockchain. When
+this occurs, the client will cease sending payments to the alderman, and the
+alderman will delete the file from disk. Ordinarily, the closing party will
+notify their counterparty in order to have a clean finish to the channel.
+However, if they do not do this, the counterparty can still know the channel is
+closed, as they can check the blockchain for one of the transactions sent as
+payment in the channel.
 
 \subsubsection{File Retrieval}
 
-\subsubsection{Punishment}
+When the channel between the client and alderman is closed
+
+\subsubsection{Punishing Misbehavior}
 
 An alderman is expected to behave according to the norms of the protocol. When
 an alderman starts misbehaving, it is in the best interest of the rest of the
@@ -253,8 +271,16 @@ process is the determination of liveness, as a dead alderman will not respond to
 a challenge fast enough.
 
 One of the ways misbehavior is detected is by aldermen challenging each other on
-the files they both store.
+the files they both store. To achieve the property of resiliency, clients should
+replicate their file across several aldermen. Other aldermen can detect this by
+reading the file information off the blockchain, as the funding transaction that
+.
 
+In case clients are cheated by a misbehaving alderman before a quorum occurs, a
+client can blacklist an alderman by public key. Sybil attacks are more difficult
+for aldermen, as it takes significant resources to become in alderman in the
+first place. Because the next alderman election happens after the quorum
+process, blacklisting the 
 
 \section{Evaluation}
 
