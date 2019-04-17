@@ -172,6 +172,8 @@ of shire tokens and by a selection process.
 
 \subsubsection{Selection}
 
+Static ip address
+
 \subsubsection{Common Data Store $\mathcal{D}$}
 
 \subsubsection{Client File Channels}
@@ -232,14 +234,6 @@ multisig transaction that updates the payment to use the escrow funds to pay the
 alderman. The alderman, on receipt of the transaction, resets the interval count
 and holds the uploaded file on disk.
 
-Note that the client does not need to strictly have the file on disk in order to
-validate the file. They can request the file from the alderman (as seen in the
-section below) and verify it against both the signature stored on the
-blockchain and the PoR sent over by the alderman. This alternative method,
-although more bandwidth-intensive, is useful as a tool against censorship; a
-client can send a restricted document to an alderman and retrieve it when it is
-safe to do so.
-
 \paragraph{Closure.} If the client sends a closure request, the alderman decides
 that it cannot hold the file anymore, or if the timeout for payment expires, the
 channel moves to a closed state. Either party can initiate the closure by
@@ -253,7 +247,31 @@ payment in the channel.
 
 \subsubsection{File Retrieval}
 
-When the channel between the client and alderman is closed
+Other users of \textsc{CouncilFS} can download files from aldermen relatively
+easily. The transaction ID of the funding transaction is the only information
+necessary to find a file, since a user can read off the authentication
+information (such as signature and uploader public key) along with location in
+the alderman network (alderman public key) directly off the blockchain. In
+practice, the client can post the absolute location of the funding transaction
+so other users do not have to iterate through the whole blockchain to find file
+information. 
+
+The user can assume that the file referenced by a funding transaction is
+available at the alderman until a payment transaction is posted to the
+blockchain. This parallels the state of the file channel between a client and an
+alderman: it opens when the funding transaction is posted, and closed when a
+payment transaction is posted. If the alderman is in the middle of receiving or
+deleting a file, it can return such a status to the user, even if the
+transaction that supports this claim has not been posted to the chain.
+
+Note that the client does not need to strictly have the file on disk in order to
+validate the file during normal channel operation. They can request the file
+from the alderman as a normal user and verify it against both the signature
+stored on the blockchain and the PoR sent over by the alderman. This alternative
+method, although more bandwidth-intensive, is useful as a tool against
+censorship; a client can send a restricted document to an alderman and retrieve
+it when it is safe to do so.
+
 
 \subsubsection{Punishing Misbehavior}
 
