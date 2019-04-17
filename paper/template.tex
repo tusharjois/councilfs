@@ -167,13 +167,20 @@ are trusted by the others in the network to provide file distribution and
 logistics services for all of \textsc{CouncilFS}. File storage capabilities are
 provided to \emph{clients}, who pay the aldermen for this distribution service.
 Other nodes in the network can download files from the aldermen as long as this
-payment is made. This extra network responsibility is bootstrapped by the escrow
-of shire tokens and by a selection process.
+payment is made. For the members, . This extra network responsibility is
+bootstrapped by the escrow of shire tokens and by a selection process. In
+addition to the shire clients pay to store files, aldermen (as a pool) earn 15\%
+of the block reward from a newly-mined block for the additional responsibility
+they take on from the network. This two-level system is similar to the concept
+of ``masternodes'' in cryptocurrencies such as Dash \cite{dash-coin}, but
+aldermen in \textsc{CouncilFS} have different responsibilities and additional
+sources of income other than a part of the block reward.
 
 \subsubsection{Selection}
 
 Static ip address
 1000 Shire 
+Additional funds?
 
 \subsubsection{Common Data Store $\mathcal{D}$}
 
@@ -257,7 +264,7 @@ blockchain. In practice, the client can post the absolute location of the
 funding transaction so other users do not have to iterate through the whole
 blockchain to find file information.
 
-Based on the election criteria denoted above, every alderman must have a static
+Based on the selection criteria denoted above, every alderman must have a static
 IP address that is recorded on chain. So, once the user finds the location of
 the file, they can resolve the IP address associated with that public key by
 looking on the blockchain. They then use that IP address to make a request to
@@ -290,13 +297,17 @@ alderman if they catch the misbehavior (assuming the majority of aldermen are
 honest). A deeper analysis of the incentives surrounding alderman behavior is in
 the Discussion section below.
 
-A client can detect alderman misbehavior easily. There are two ways alderman can
-misbehave: no storing the file provided by the client, and not allowing user
-downloads of the file. Clients can issue challenges to isolate misbehavior.
-Implicit to this challenge process is the determination of liveness, as a dead
-alderman will not respond to a challenge fast enough.
+\paragraph{Client-side.} A client can detect alderman misbehavior easily. There
+are two ways alderman can misbehave: no storing the file provided by the client,
+and not allowing user downloads of the file. Clients can issue challenges to
+isolate misbehavior. Implicit to this challenge process is the determination of
+liveness, as a dead alderman will not respond to a challenge fast enough.
 
-Aldermen also verify each others' operation in the network.
+\paragraph{Alderman-side.} Aldermen also verify each others' operation in the
+network.
+
+
+DASH QUORUM? 
 
 Aldermen determine misbehavior by challenging each other on the operations of
 the network. If an alderman can prove to a challenger that it is meeting the
@@ -329,7 +340,7 @@ The source code for \textsc{CouncilFS} may be found at
 
 \paragraph{Incentive Structure.}
 
-\paragraph{Replication and Censorship Resistance.}
+\paragraph{Replication and Censorship Resistance.} Delegation?
 
 \paragraph{Trusting Aldermen.} Privacy concerns -- encryption
 
