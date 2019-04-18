@@ -12,6 +12,7 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
+\usepackage{graphicx}
 
 \title{CouncilFS: An Incentivized, Resilient File Distribution System}
 
@@ -226,9 +227,8 @@ to $\mathcal{D}$, they simply download them from the aldermen.
 \subsubsection{Client File Channels}
 
 \begin{figure}[t]
-  \centering
-  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{File channel between a client and an alderman.}
+  \includegraphics[width=\linewidth]{figures/init_channel.png}
+  \caption{Initializing a file channel between a client and an alderman.}
   \label{fig:channel}
 \end{figure}
 
