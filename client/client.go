@@ -206,7 +206,7 @@ func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, paym
 
 // VerifyPOR checks that an alderman is actually holding the file they clain to be 
 // [the POR is correctly computed]
-func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey) *ChannelMessage {
+func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
 	_,clientMsg, err := pay.Messages[len(pay.Messages)-1].GetPayload()
 	
 	if err != nil {
@@ -214,7 +214,7 @@ func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey) *ChannelMessag
 	}
 	
 	if pay.Encoding != nil {
-		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, clientMsg, pay.Encoding.Length()) {
+		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, clientMsg, k) {
 			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
 			pay.Messages = append(pay.Messages, closeMessage)
 			return closeMessage

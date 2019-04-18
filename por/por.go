@@ -198,11 +198,23 @@ func VerifyPOR(fileDigests *EncodedDataset , blockchainVal []byte, ticket []byte
 	hashStr := append(idStr, structuredTicket.Seed...)
 	shaRes := sha256.Sum256(hashStr)
 	currentFile := calculateFileIndex(shaRes, int64(len(fileDigests.shards)))
-	var i uint
-	for ; i < k; i++ {
+	fmt.Printf("K is %v", k)
+	for i := 0; uint(i) < k; i++ {
+		fmt.Printf("As an integer %v at iteration: %v \n", len(structuredTicket.ProofFiles), i)
+
+		if len(structuredTicket.ProofFiles) <= i {
+			fmt.Printf("Length Proof Files: %v\n", len(structuredTicket.ProofFiles))
+			fmt.Printf("Index: %v\n", i)
+		}
 		currFileInfo := structuredTicket.ProofFiles[i]
+		if currentFile > int64(len(fileDigests.shards)) {
+		    panic("Current file index is larger than number of files held")
+		}
+		if currentFile > int64(len(fileDigests.hashes)) {
+		    panic("Current file index is larger than number of hashes held")
+		}
 		hashStr = append(idStr, currentSig...)
-		hashStr = append(hashStr, fileDigests.shards[i]...)
+		hashStr = append(hashStr, fileDigests.shards[currentFile]...)
 		currentHash := sha256.Sum256(hashStr)
         // the merkle proof right now is basically just a hash of the segment. 
         // so there are two ways to do this: have the verifier hold more information
