@@ -12,7 +12,6 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
-\usepackage{graphicx}
 
 \title{CouncilFS: An Incentivized, Resilient File Distribution System}
 
@@ -30,28 +29,13 @@
   Johns Hopkins University\\
   Baltimore, MD \\
   \texttt{jois@cs.jhu.edu} \\
-  %% \AND
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
 }
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  We present \textsc{CouncilFS},
+  We present \textsc{CouncilFS}, a censorship resistant file storage system that utilizes blockchain technologies to incentivize proper storage and to audit misbehaving servers. We show how it is possible to build such a construction using PORs, master nodes, payment channels, and punishments to ensure that the network is not burdened by unwanted bloat in communication complexity and the data that must be stored on the blockchain. We then implement the most crictical features of our proposed system and provide microbenchmarks to show how feasible the scheme precisely is. We find that in practice, what we propose is [FEASIBLE OR NOT FEASIBLE, unsure yet] and could potentially be used as a tool to allow clients to split their files across servers in a way that is robust to physical failures such as power outages or more pressingly, censorship by political regimes. 
 \end{abstract}
 
 
@@ -83,14 +67,13 @@ based proof of work by authors such as the creators of Permacoin, however, there
 scheme has some limitations in that they assume that the file has to be publicly
 available and that it can be handed out to new miners by a trusted dealer. This
 limits its usefulness. Because they focus on storing a large publicly known
-file, they also do not acknowledge any potential that this scheme brings for
-loose censorship resistance. By distributing the trusted dealer among more
+file, they also do not acknowledge how this scheme could be adapted to supply censorship resistance. By distributing the trusted dealer among more
 mutually distrusting parties, we can accommodate the storage of encrypted files
-and provide a myriad of parties that a client can access should any few be
+and provide a myriad of options for a client to retrieve a file, should any few be
 blocked or taken down. Overall, we believe our scheme leverages economic
 incentives and blockchain technologies to create a currency that can more or
 less be used to drive distributed storage in a way that penalizes those that
-attempt to cheat clients out of money without of their files and allows for
+attempt to cheat clients out of money without properly holding their files and allows for
 discrete sharing of potentially covert information.
 
 \paragraph{Contributions.} We present \textsc{CouncilFS}, a file distribution
@@ -100,26 +83,26 @@ rendered. Our contributions are the following:
 \begin{itemize}
 \item A new file distribution system that uses a two-level node hierarchy to
   bootstrap trust and a blockchain to provide incentives.
-\item A protocol that combines proofs-of-retrieveability, with the
-  notion of payment channels to provide incentivized 
-\item The implementation the proofs-of-retrieveability, client, and alderman
-  code of \textsc{CouncilFS} in the Go programming language.
+\item A protocol that combines proofs-of-retrievability with the
+  notion of payment channels to offer a verifiable method for retrieving a file and the incentive for the file to be stored properly
+\item An implementation of these proofs-of-retrieveability, clients, and alderman
+  which are introduced in our paper \textsc{CouncilFS} in the Go programming language.
 \end{itemize}
 
 \subsection{Intuition}
 
 
 \section{Related Work}
-Our work exists at the crossroads of many different active fields of research including alternative Proofs of Work or alternatives to Proofs of Work, blockchain applications, and censorship resistance.
-b
-\subsection{Alternative Proofs of Work}
-One major component of the Bitcoin network is the proof of work that is used to decide which miner is allowed to post the next block to the blockchain and, consequently, receive the mining reward. This proof of work mechanism is required to maintain a consistent ledger that gives a unified view of the world such that detecting double spending is possible. However, overtime, it has become clear that the original proof of work proposed by Satoshi Nakomoto, i.e. partial hash collisions, has its fair share of problems [cite Bitcoin paper].\\
-Two major problems with this proof of work are how wasteful the Bitcoin Network is and how mining now largely favors specific miners in a way that is not democratic. Specialized hardware, FGPAs, and ASICs have all made the network prohibitive for new miners to enter unless they enlist in a mining pool. To combat this, researchers and blockchain/cryptocurrency engineers have come up with a number of solutions. Some of these solutions include using memory resistant hash functions like scrypt instead of double sha256 [cite litecoin]. Other cryptocurrencies have also proposed using multiple proof of work algorithms in tandem such as the X11 proof of work which uses X all of the contestants for SHA3 [cite Dash].\\
-There has also been considerable concern over the environmental costs of the Bitcoin network. Even during the recent bust around the beginning of January 2019, Bitcoin was still consuming approximately 40 Twh [cite here https://digiconomist.net/bitcoin-energy-consumption] which is more than what Denmark was consuming back in 2017 [cite https://arstechnica.com/tech-policy/2017/12/bitcoins-insane-energy-consumption-explained/]. Other academic researcher were not impervious to how unsustainable this model was and they sought ways to make the work done by the network useful or to abandon proofs of work altogether.\\
-Useful proof of work schemes that have been presented in the past include PrimeCoin which computes Cunningham chains and bichains of prime numbers [http://primecoin.io/about.php] and Permacoin which utilizes a Proof of Retrievability (POR) for the underlying blockchain. Permacoin operates under the assumption that a trusted dealer exists, who can hand to miners on the network the large static archival file $\mathcal{F}$ that the PORs will be conducted over. Miners then replace the Bitcoin hash-based proof of work with a proof of retrievalability which is possible to verify because every miner has access to $\mathcal{F}$. The Permacoin authors also introduce a new stateful signature scheme that should be relatively efficient while also incentivizing a miner to not "outsource" their computation to the cloud because in order to do so they would need to give up their private key [cite permacoin]. This differs from our scheme as there is not one global static file but man small files carried by clients that are given directly to trusted nodes, called \emph{Alderman} and these files are capable of being updated or modified by the clients.
+As touched upon in our introduction, our work exists at the crossroads of many different active fields of research including alternative Proofs of Work or alternatives to Proofs of Work, blockchain applications, and censorship resistance.
 
-\subsection{Alternatives to Proofs of Work}
-Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation with open and then it answers challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a pebbling over a random graph that is efficient to describe in terms of the labels and to prove something about this graph to a verifier[proofs of space paper]. One popular Proof of Space based cryptocurrency is Spacemint which is unique in that it implements two different blockchains, one for signatures and one for transactions, and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol by mining on multiple blocks or trying to bias previuos chains to give a miner a higher chance of winning in the future (also known as nothing at stakes problems, and block/challenge grinding)[cite spacemint]. In our future work, we suggest similar punishment behavior by which a "cheating" miner may be identified. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history in order to prevent grinding attacks because our work still proposes a Proof of Work scheme that at least does not suffer from Nothing at Stakes Problems or block grinding as the current challenge is still based on a hash of the previous block which is unpredictable.
+\subsection{Alternative Proofs of Work and Alternatives to Proofs of Work}
+One major component of the Bitcoin network is the proof of work that is used to decide which miner is allowed to post the next block to the blockchain and, consequently, receive the mining reward. This proof of work mechanism is required to maintain a consistent ledger that gives a unified view of the world such that detecting double spending is possible. However, overtime, it has become clear that the original proof of work proposed by Satoshi Nakomoto, i.e. partial hash collisions, has some undesirable properties \cite{btc}.\\
+Two major problems with this proof of work are how wasteful the Bitcoin Network is and how mining now largely favors specific miners in a way that is not democratic. Specialized hardware, FGPAs, and ASICs have all made the network prohibitive for new miners to enter unless they enlist in a mining pool. To combat this, researchers and blockchain/cryptocurrency engineers have come up with a number of solutions. Some of these solutions include using memory resistant hash functions like scrypt instead of double sha256 \cite{litecoin}. Other cryptocurrencies have also proposed using multiple proof of work algorithms in tandem such as the X11 proof of work which uses X all of the contestants for SHA3 \cite{dash-coin}.\\
+There has also been considerable concern over the environmental costs of the Bitcoin network. Even during the recent bust around the beginning of January 2019, Bitcoin was still consuming approximately 40 Twh \cite{btc-consumption} which is more than what Denmark was consuming back in 2017 \cite{somuchenergy}. Other academic researcher were not impervious to how unsustainable this model was and they sought ways to make the work done by the network useful or they abandoned these proofs of work altogether.\\
+Useful proof of work schemes that have been presented in the past include PrimeCoin which computes Cunningham chains and bichains of prime numbers \cite{primecoin} and Permacoin which utilizes a Proof of Retrievability (POR) for the underlying blockchain. Permacoin operates under the assumption that a trusted dealer exists, who can hand to miners on the network the large static archival file $\mathcal{F}$ that the PORs will be conducted over. Miners then replace the Bitcoin hash-based proof of work with a proof of retrievability which is possible to verify because every miner has access to $\mathcal{F}$. The Permacoin authors also introduce a new stateful signature scheme that should be relatively efficient while also incentivizing a miner to not "outsource" their computation to the cloud because in order to do so they would need to give up their private key \cite{perma}. This differs from our scheme as there is not one global static file but many small files carried by clients that are given directly to trusted nodes, called \emph{Alderman} and these files are capable of being updated or modified by the clients. There has also been work done in the past regarding efficient PORs for large files \cite{largefile}. <--- NOTE GABBY STILL WANTS TO READ THIS PAPER
+
+
+Other researchers explored methods of getting rid of proofs of work and instead using a proof of some other property such as stake or space. Some of these ideas like Proofs of Space and Proofs of Erasure are similar to Proofs of Retrievability. Proofs of Space, for example, guarantee that a miner is holding open some space it could be doing computation with. The way this scheme is commonly implemented is to use a pebbling over a random graph that is efficient to describe - in terms of the labels - and the prover/miner then must prove something about this graph to a verifier so that the verifier can be convinced that this space is being held open[proofs of space paper]. One popular Proof of Space based cryptocurrency is Spacemint which is unique in that it implements two different blockchains, one for signatures and one for transactions, and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol by mining on multiple blocks or trying to bias previous chains to give a miner a higher chance of winning in the future (also known as nothing at stakes problems, and block/challenge grinding)\cite{spacemint}. Proofs of Secure Erasure are similar to Proofs of Storage in that they tend to use pebbling techniques, however in this case a space restricted prover is trying to convince a verifier it has deleted data of up to particular size.  In our future work, we suggest similar punishment behavior by which a "cheating" miner may be identified. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history in order to prevent grinding attacks because our work still proposes a Proof of Work scheme that at least does not suffer from Nothing at Stakes Problems or block grinding as the current challenge is still based on a hash of the previous block which is unpredictable. The authors would also like to note that there exists another similar cryptocurrency called filecoin. However, it has not been implemented yet in full. At the very least, they do not suggest a two tiered trust system but instead have all miners engage directly with clients and use some form of proof of work in which the probability of a miner winning the right to write the next block is based on how much storage of the network they are currently holding for client files. \cite{filecoin}
 
 
 \subsection{Censorship Resistant File Storage}
@@ -136,9 +119,9 @@ There are three types of nodes in our network: \emph{members}, \emph{aldermen},
 and \emph{clients}. Members form the backbone of the network; they are the nodes
 that primarily interface with the blockchain. They verify transactions between
 users of the underlying currency of \textsc{CouncilFS}. Aldermen are members of the
-network who have been elected to take on more responsbility in the network.
+network who have been elected to take on more tasks or services in the network.
 Their primary responsibility is to maintain instances of the files that clients
-upload. Clients pay for this privlege, and engage in a protocol to ensure that
+upload. Clients pay for this privilege, and engage in a protocol to ensure that
 the alderman remains honest. Aldermen who are not honest are demoted back to the
 member pool. This general outline of our construction is discussed in more
 detail in the subsections below.
@@ -165,17 +148,17 @@ acts a verifier. The PoR is computationally intensive, and is still
 fundamentally a proof-of-work scheme; it acts as a replacement for the SHA-256
 hash function used in Bitcoin and related cryptocurrencies.
 
-Our instantiation of PoR is similar to the one used in Permacoin \cite{perma},
-in that it acts as a positive use of computational resources. There are some key
-differences, however. In \textsc{CouncilFS}, the aldermen replace the dealer as
-the arbiter of the common dataset. The aldermen decide which members get which
-slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally,
+To reiterate, our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
+that it acts as a positive use of computational resources. There are some key
+differences, however. In \textsc{CouncilFS}, the aldermen replace the singular dealer as
+the arbiters of the common dataset. The aldermen decide which members get which
+slices of $\mathcal{D}$, rather than having a trusted setup phase [GABBY: Wouldn't it be the case that we are now using trusted set up? Before it was based on the hash of a public key]. Additionally,
 because the aldermen handle $\mathcal{D}$, it can be updated continuously. Both
 of these points are discussed further later in the paper.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/por_member.png}
+  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
   \caption{Structure of the PoR employed by a member.}
   \label{fig:por-member}
 \end{figure}
@@ -187,7 +170,7 @@ are trusted by the others in the network to provide file distribution and
 logistics services for all of \textsc{CouncilFS}. File storage capabilities are
 provided to \emph{clients}, who pay the aldermen for this distribution service.
 Other nodes in the network can download files from the aldermen as long as this
-payment is made. For the members, the provide the common data store used in the
+payment is made. For the members, they provide the common data store used in the
 PoR. This extra responsibility requires trust, which is bootstrapped by the
 escrow of shire tokens and by a selection process. In addition to the shire
 clients pay to store files, aldermen (as a pool) earn 15\% of the block reward
@@ -211,7 +194,7 @@ shire. This significant investment ensures that the alderman participates in the
 network correctly, as the value of their investment fluctuates with the success
 of the network. It also restricts the possibility of a Sybil attack to
 compromise the alderman network. Because of the fixed growth rate of shire (in a
-typical implementation), there will be a limit on the total number of
+typical implementation), there will be a limit on the total number [Gabby: reminder to talk to Tushar about this]  
 
 There are also practical requirements for the aldermen to satisfy. One of them
 is to maintain strong bandwidth and a static IP address. This allows for members
@@ -232,7 +215,7 @@ on the current state of the network. Aldermen attempt to distribute the file
 randomly, such that all shards of $\mathcal{D}$ are equally distributed.
 
 The dataset cannot be updated in place. This is because changes to the dataset
-may break the validity of PoRs already on the blockchain. However, the dataset
+may break the validity of PoRs already on the blockchain[Gabby: possible other idea, we have signed updated root digests added to the block chain and those are used to verify against for proofs that will be done in the future?? Have them be signed by current alderman??]. However, the dataset
 can be appended to, as members are only given shards of the full dataset to
 store. When the members wish to operate on the new segments that were appended
 to $\mathcal{D}$, they simply download them from the aldermen.
@@ -240,14 +223,15 @@ to $\mathcal{D}$, they simply download them from the aldermen.
 \subsubsection{Client File Channels}
 
 \begin{figure}[t]
-  \includegraphics[width=\linewidth]{figures/init_channel.png}
-  \caption{Initializing a file channel between a client and an alderman.}
+  \centering
+  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{File channel between a client and an alderman.}
   \label{fig:channel}
 \end{figure}
 
 The primary service aldermen provide is a file distribution network for hire.
 Clients engage in a protocol in order to upload a file and provide a constant
-flow of payment to an alderman This
+flow of payment to an alderman. This
 protocol, known as a \emph{file channel}, is similar to the off-chain
 transactions developed in previous work such as the payment channels in the
 Lightning Network \cite{lightning}. However, in addition to the payment being
@@ -308,7 +292,7 @@ payment in the channel.
 \subsubsection{File Retrieval}
 
 Allowing other users of \textsc{CouncilFS} to download files is one of the
-responsibilities of aldermen. The transaction ID of the funding transaction is
+responsibilities of aldermen[Gabby: I think this is good but how can you incentivize the person uploading it to be the sole one paying, just by altruism alone?]. The transaction ID of the funding transaction is
 the only information necessary to find a file, since a user can read off the
 authentication information (such as signature and uploader public key) along
 with location in the alderman network (alderman public key) directly off the
@@ -332,7 +316,7 @@ payment transaction is posted. If the alderman is in the middle of receiving or
 deleting a file, it can return such a status to the user, even if the
 transaction that supports this claim has not been posted to the chain. 
 
-Note that this structure means that client does not need to strictly have the
+Note that this structure means that the client does not need to strictly have the
 file on disk in order to validate the file during normal channel operation
 (above). They can request the file from the alderman as a normal user and verify
 it against both the signature stored on the blockchain and the PoR sent over by
@@ -394,7 +378,7 @@ check is to retrieve a client's file from the alderman. The final check is a
 PoR on $\mathcal {D}$, which Board A should already have a copy. Every passed
 check gives an alderman \emph{merits}, while failed ones take merits away. At a
 certain threshold of merits, the alderman is kicked back to the general member
-pool.
+pool.[Gabby: Do you only check an alderman on one random client's files or many/all clients?]
 
 The random selection of the boards ensures that the attacker must be selected
 every time in order to continuously trick the system. As such, this probabilistic
