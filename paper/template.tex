@@ -71,7 +71,7 @@ Stake (where who gets to mine is based off of players that have more stock in
 the current network) and Proofs of Space (where there is a lot of computation
 done up front for initialization of a new miner, but the actual mining itself is
 cheap). However, schemes that do not rely on heavy computation tend to suffer
-from ``nothing at stake'' problems because there is no incentive for miners to
+from “nothing at stake” problems because there is no incentive for miners to
 work on just the longest chain when it is so inexpensive to try and extend other
 forks.
 
@@ -105,17 +105,24 @@ rendered. Our contributions are the following:
   code of \textsc{CouncilFS} in the Go programming language.
 \end{itemize}
 
+\subsection{Intuition}
+
+
 \section{Related Work}
+Our work exists at the crossroads of many different active fields of research including alternative Proofs of Work or alternatives to Proofs of Work, blockchain applications, and censorship resistance.
+b
 \subsection{Alternative Proofs of Work}
-Our work exists at the cross-section of many different active fields of research. Before this paper, there have been many proposals for Proof-of-Work schemes that serve some useful function or purpose like PrimeCoin. In a previous paper, there has also been a proposal to utilize a POR as a proof of work for the purpose of storing archival information that would be known by all miners so that validation of the files could be assured $\mathcal{D}$. The authors also assume that this file would not be updated and introduce a new stateful signature scheme that should be relatively efficient while also ensuring that a miner cannot "outsource" their computation. This differs from our scheme as we allow for the existence of other files carried by clients that are given directly to trusted nodes, called \emph{Alderman}, and are not verifiable by every single node on the network.\\
+One major component of the Bitcoin network is the proof of work that is used to decide which miner is allowed to post the next block to the blockchain and, consequently, receive the mining reward. This proof of work mechanism is required to maintain a consistent ledger that gives a unified view of the world such that detecting double spending is possible. However, overtime, it has become clear that the original proof of work proposed by Satoshi Nakomoto, i.e. partial hash collisions, has its fair share of problems [cite Bitcoin paper].\\
+Two major problems with this proof of work are how wasteful the Bitcoin Network is and how mining now largely favors specific miners in a way that is not democratic. Specialized hardware, FGPAs, and ASICs have all made the network prohibitive for new miners to enter unless they enlist in a mining pool. To combat this, researchers and blockchain/cryptocurrency engineers have come up with a number of solutions. Some of these solutions include using memory resistant hash functions like scrypt instead of double sha256 [cite litecoin]. Other cryptocurrencies have also proposed using multiple proof of work algorithms in tandem such as the X11 proof of work which uses X all of the contestants for SHA3 [cite Dash].\\
+There has also been considerable concern over the environmental costs of the Bitcoin network. Even during the recent bust around the beginning of January 2019, Bitcoin was still consuming approximately 40 Twh [cite here https://digiconomist.net/bitcoin-energy-consumption] which is more than what Denmark was consuming back in 2017 [cite https://arstechnica.com/tech-policy/2017/12/bitcoins-insane-energy-consumption-explained/]. Other academic researcher were not impervious to how unsustainable this model was and they sought ways to make the work done by the network useful or to abandon proofs of work altogether.\\
+Useful proof of work schemes that have been presented in the past include PrimeCoin which computes Cunningham chains and bichains of prime numbers [http://primecoin.io/about.php] and Permacoin which utilizes a Proof of Retrievability (POR) for the underlying blockchain. Permacoin operates under the assumption that a trusted dealer exists, who can hand to miners on the network the large static archival file $\mathcal{F}$ that the PORs will be conducted over. Miners then replace the Bitcoin hash-based proof of work with a proof of retrievalability which is possible to verify because every miner has access to $\mathcal{F}$. The Permacoin authors also introduce a new stateful signature scheme that should be relatively efficient while also incentivizing a miner to not "outsource" their computation to the cloud because in order to do so they would need to give up their private key [cite permacoin]. This differs from our scheme as there is not one global static file but man small files carried by clients that are given directly to trusted nodes, called \emph{Alderman} and these files are capable of being updated or modified by the clients.
 
 \subsection{Alternatives to Proofs of Work}
-Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation open and then answer challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a form of pebbling and pebble the spaces and prove something about the graph to a verifier. One popular Proof of Space is spacemint which is unique in that it implements two different blockchains and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol in ways that are unlikely to happen if Proof of Work algorithms (for example, nothing at stake problems and block/challenge grinding). In our future work, we propose a similar kind of punishment mechanism. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history either.
+Other alternative proofs of work that are similar to PORs include Proofs of Space, Proofs of Data Possession and Proofs of Erasure. Proofs of Space, for example, guarantee that a miner is holding some space it could be doing computation with open and then it answers challenges to ensure this is in fact the case. The way this scheme is commonly implemented is to use a pebbling over a random graph that is efficient to describe in terms of the labels and to prove something about this graph to a verifier[proofs of space paper]. One popular Proof of Space based cryptocurrency is Spacemint which is unique in that it implements two different blockchains, one for signatures and one for transactions, and utilizes a punishment mechanism to disincentivize miners from deviating from the protocol by mining on multiple blocks or trying to bias previuos chains to give a miner a higher chance of winning in the future (also known as nothing at stakes problems, and block/challenge grinding)[cite spacemint]. In our future work, we suggest similar punishment behavior by which a "cheating" miner may be identified. However, we use this tool to demote misbehaving \emph{Alderman} and to provide recompense for grief-stricken clients. We do not propose two different blockchains/ledgers for history in order to prevent grinding attacks because our work still proposes a Proof of Work scheme that at least does not suffer from Nothing at Stakes Problems or block grinding as the current challenge is still based on a hash of the previous block which is unpredictable.
 
 
 \subsection{Censorship Resistant File Storage}
-There has also been work done previously in the creation of file storage resistant to the takedown of particular governments and agencies. Publius, for example, was proposed as a method of resistance in which n servers host the encrypted content but in order to get the key a client must obtain k-out-of-n secret shares that are also controlled by these servers. While there is plausible deniability on the part of the servers, as they are hosting encrypted material, there is no mechanism or recompense in place for servers electing to delete their shares and no way to communicate this information to all of the other servers readily on the network. What this paper attempts to do is fundamentally different as we not only want to provide a mechanism by which servers can help dissidents/clients but we want to provide them an incentive to do so as well. Namely, in the form of currency. 
-
+There has also been work done previously in the creation of file storage resistant to the takedown of particular governments and agencies. Publius, for example, was proposed as a method of censorship resistance in which n servers host the encrypted content and in order to get a key to decrypt a file, a client must obtain k-out-of-n secret shares that are also controlled by these servers[cite Publius]. While there is plausible deniability on the part of the servers, as they are hosting encrypted material, there is no mechanism or recompense in place for servers electing to delete their shares and no way to communicate this information to all of the other servers readily on the network. What this paper attempts to do is fundamentally different as we not only want to provide a mechanism by which servers can help dissidents/clients but we want to provide them an incentive to do so as well. 
 
 \subsection{Related Cryptocurrencies}
 Other currencies have also suggested multiple tiers of miners where a subset that is trusted is given a vote in deciding how the network will progress, police other miners to ensure they are alive and responsive, and perform other services for clients. Such cryptocurrencies include Dashcoin which implements a two tier system of miners: master nodes and regular nodes. The Master nodes are equivealent to Bitcoin's full network nodes in that they do extra functionality for network maintenance. However, they differ in that they receive a reward for the utility they provide. Concretely, master nodes are required to hold a particular amount of currency in escrow, i.e. 1000 coins, and are called upon by the network to complete extra services for clients such as PrivateSends and InstantSends. In return, masternodes receive part of the block reward (45\%) that is created by miners. Our system differs from theirs because they use these nodes for improving the underlying privacy and efficiency of the network while we utilize them as trusted parties that clients may upload files to with better safety assumptions (because of their higher stake in the protocol).   
@@ -443,88 +450,16 @@ and is available at the GitHub repository found at:
 
 \section{Conclusion}
 
-\section{Examples of citations, figures, tables, references}
-\label{sec:others}
- \cite{permacoin-repurposing-bitcoin-work-for-data-preservation}
-
-Of note is the command \verb+\citet+, which produces citations
-appropriate for use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-\begin{center}
-  \url{https://www.ctan.org/pkg/booktabs}
-\end{center}
 
 
-\subsection{Figures}
-\lipsum[10] 
-See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-\lipsum[11] 
 
 
-\subsection{Tables}
-\lipsum[12]
-See awesome Table~\ref{tab:table}.
 
-\begin{table}
- \caption{Sample table title}
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    \multicolumn{2}{c}{Part}                   \\
-    \cmidrule(r){1-2}
-    Name     & Description     & Size ($\mu$m) \\
-    \midrule
-    Dendrite & Input terminal  & $\sim$100     \\
-    Axon     & Output terminal & $\sim$10      \\
-    Soma     & Cell body       & up to $10^6$  \\
-    \bottomrule
-  \end{tabular}
-  \label{tab:table}
-\end{table}
 
-\subsection{Lists}
-\begin{itemize}
-\item Lorem ipsum dolor sit amet
-\item consectetur adipiscing elit. 
-\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
-\end{itemize}
 
 
 \bibliographystyle{unsrt}  
-\bibliography{references}  %%% Remove comment to use the external .bib file (using bibtex).
-%%% and comment out the ``thebibliography'' section.
-
-
-%%% Comment out this section when you \bibliography{references} is enabled.
-%\begin{thebibliography}{1}
-
-%\bibitem{kour2014real}
-%George Kour and Raid Saabne.
-%\newblock Real-time segmentation of on-line handwritten arabic script.
-%\newblock In {\em Frontiers in Handwriting Recognition (ICFHR), 2014 14th
-%  International Conference on}, pages 417--422. IEEE, 2014.
-
-%\bibitem{kour2014fast}
-%George Kour and Raid Saabne.
-%\newblock Fast classification of handwritten on-line arabic characters.
-%\newblock In {\em Soft Computing and Pattern Recognition (SoCPaR), 2014 6th
-%  International Conference of}, pages 312--318. IEEE, 2014.
-
-%\bibitem{hadash2018estimate}
-%Guy Hadash, Einat Kermany, Boaz Carmeli, Ofer Lavi, George Kour, and Alon
-%  Jacovi.
-%\newblock Estimate and replace: A novel approach to integrating deep neural
-% networks with existing applications.
-%\newblock {\em arXiv preprint arXiv:1804.09028}, 2018.
-
-%\end{thebibliography}
+\bibliography{references}
 
 
 \end{document}
