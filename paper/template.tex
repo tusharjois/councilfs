@@ -12,6 +12,7 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
+\usepackage{graphicx}
 
 \title{CouncilFS: An Incentivized, Resilient File Distribution System}
 
@@ -164,8 +165,8 @@ acts a verifier. The PoR is computationally intensive, and is still
 fundamentally a proof-of-work scheme; it acts as a replacement for the SHA-256
 hash function used in Bitcoin and related cryptocurrencies.
 
-Our instantiation of PoR is similar to the one in Permacoin \cite{perma}, in
-that it acts as a positive use of computational resources. There are some key
+Our instantiation of PoR is similar to the one used in Permacoin \cite{perma},
+in that it acts as a positive use of computational resources. There are some key
 differences, however. In \textsc{CouncilFS}, the aldermen replace the dealer as
 the arbiter of the common dataset. The aldermen decide which members get which
 slices of $\mathcal{D}$, rather than having a trusted setup phase. Additionally,
@@ -174,7 +175,7 @@ of these points are discussed further later in the paper.
 
 \begin{figure}[t]
   \centering
-  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \includegraphics[width=\linewidth]{figures/por_member.png}
   \caption{Structure of the PoR employed by a member.}
   \label{fig:por-member}
 \end{figure}
@@ -239,9 +240,8 @@ to $\mathcal{D}$, they simply download them from the aldermen.
 \subsubsection{Client File Channels}
 
 \begin{figure}[t]
-  \centering
-  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{File channel between a client and an alderman.}
+  \includegraphics[width=\linewidth]{figures/init_channel.png}
+  \caption{Initializing a file channel between a client and an alderman.}
   \label{fig:channel}
 \end{figure}
 
