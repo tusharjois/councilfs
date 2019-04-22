@@ -110,12 +110,15 @@ func (pay *PaymentChannel) GetInterval() time.Duration {
 	return pay.Interval
 }
 
+// update your own message channel with a pointer to a message you hold
 func (pay *PaymentChannel) UpdateMessages(msg *ChannelMessage) {
 	pay.Messages = append(pay.Messages, msg)
 }
 
 func (pay *PaymentChannel) DebugPrint() {
-    fmt.Printf("%v\n", pay.Messages)
+	for i := 0; i < len(pay.Messages); i++ {
+		fmt.Printf("%v\n", pay.Messages[i])
+	}
 }
 
 // NewMessage creates a ChannelMessage with specified parameters. TODO: Add more description.
@@ -169,7 +172,7 @@ func NewMessage(mType MessageType, v interface{},channelID []byte, signingKey *e
 
 // OpenChannel creates a new PaymentChannel between a client and an alderman.
 func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, payment uint,
-	paymentInterval time.Duration, encoding *por.EncodedDataset) (*PaymentChannel, *ChannelMessage, por.EncodedDataset) {
+	paymentInterval time.Duration, encoding *por.EncodedDataset) (*PaymentChannel, ChannelMessage, por.EncodedDataset) {
 	newChannel := new(PaymentChannel)
 	newChannel.ChannelID = make([]byte, 128)
 	_, err := rand.Read(newChannel.ChannelID)
@@ -199,14 +202,14 @@ func OpenChannel(clientKey *ecdsa.PrivateKey, aldermanKey *ecdsa.PublicKey, paym
 	newMessage := NewMessage(ChannelOpen, newChannel, newChannel.ChannelID, clientKey, nil)
 
 	newChannel.Messages = make([]*ChannelMessage, 0)
-	newChannel.Messages = append(newChannel.Messages, newMessage)
+	newChannel.UpdateMessages(newMessage)
 
-	return newChannel, newMessage, *encoding
+	return newChannel, *newMessage, *encoding
 }
 
 // VerifyPOR checks that an alderman is actually holding the file they clain to be 
 // [the POR is correctly computed]
-func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
+func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey, k uint) ChannelMessage {
 	_,clientMsg, err := pay.Messages[len(pay.Messages)-1].GetPayload()
 	
 	if err != nil {
@@ -216,18 +219,18 @@ func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey, k uint) *Chann
 	if pay.Encoding != nil {
 		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, clientMsg, k) {
 			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
-			pay.Messages = append(pay.Messages, closeMessage)
-			return closeMessage
+			pay.UpdateMessages(closeMessage)
+			return *closeMessage
 		}
 	}
 
 	payMessage := NewMessage(SendPayment, pay.Payment, pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
-	pay.Messages = append(pay.Messages, payMessage)
-	return payMessage
+	pay.UpdateMessages(payMessage)
+	return *payMessage
 }
 
 // RequestPOR done by client 
-func (pay *PaymentChannel) RequestPOR(clientKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
+func (pay *PaymentChannel) RequestPOR(clientKey *ecdsa.PrivateKey, k uint) ChannelMessage {
 	// because the client is requesting the POR, they choose the challenge and there is no
 	// puzzle value
 	// provide list of indices to test on 
@@ -238,11 +241,11 @@ func (pay *PaymentChannel) RequestPOR(clientKey *ecdsa.PrivateKey, k uint) *Chan
 	}
 	
 	challenge := NewMessage(PORRequest, identifierstring, pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
-    pay.Messages = append(pay.Messages, challenge)
-	return challenge
+    pay.UpdateMessages(challenge)
+	return *challenge
 }
 
-func (pay *PaymentChannel) RespondToPOR(aldermanKey *ecdsa.PrivateKey, k uint) *ChannelMessage {
+func (pay *PaymentChannel) RespondToPOR(aldermanKey *ecdsa.PrivateKey, k uint) ChannelMessage {
 	lastMessage := pay.Messages[len(pay.Messages)-1]
     
 	if msgType, payload, _ := lastMessage.GetPayload(); msgType == PORRequest {
@@ -251,8 +254,8 @@ func (pay *PaymentChannel) RespondToPOR(aldermanKey *ecdsa.PrivateKey, k uint) *
         // channel... 
         proofToSend := por.ProducePOR(aldermanKey, pay.BlockchainState, pay.Encoding, k, payload)
         message := NewMessage(PORResponse, &proofToSend, pay.ChannelID, aldermanKey, lastMessage)
-	    pay.Messages = append(pay.Messages, message)
-	    return message
+        pay.UpdateMessages(message)
+	    return *message
 	} else {
 		// code was called with the wrong input
 		panic("Received bad input -- message was not for a POR")
