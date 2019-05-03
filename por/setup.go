@@ -20,6 +20,35 @@ type EncodedDataset struct {
 	originalLen     int
 }
 
+// Length returns the number of shards in the EncodedDataset.
+func (enc *EncodedDataset) Length() uint {
+	return uint(len(enc.shards))
+}
+
+func computeTreeRoot(shards [][]byte) []byte {
+	calculateTreeRoot := make([][]byte, len(shards))
+    var length = len(shards)
+    for i := 0; i <= length; i++ {
+        hashNode := sha256.Sum256(shards[i])
+        calculateTreeRoot[i] = hashNode[:]    
+    }
+    if length > 1 {
+    	j := 0
+        for i := 0; i <= length - 1; i+=2 {
+        	if i + 1 >= length {
+                calculateTreeRoot[j] = calculateTreeRoot[i]
+                j += 1
+        	} else {
+        		combine := append(calculateTreeRoot[i], calculateTreeRoot[i+1]...)
+                hashNode := sha256.Sum256(combine)
+                calculateTreeRoot[j] = hashNode[:]
+                j += 1
+        	}
+        }
+        length = j 
+    }
+    return calculateTreeRoot[0]
+}
 // CreateErasureCoding creates a maximum distance separable code for a dataset
 // into n = r * f segments, such that any f segments can reconstruct the
 // dataset. The input slice is operated on directly. An error is returned if the
@@ -43,16 +72,19 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 	shards := make([][]byte, numDataShards)
 	toShard := make([]byte, len(dataset))
 	copy(toShard, dataset)
+    fmt.Printf("Length of data set %v, Number of data shards %v, Shard Length %v", len(dataset), numDataShards, shardLen)
 
 	for i := range shards {
 		startOffset := (i) * shardLen
+		fmt.Printf("%v\n", startOffset)
 		endOffset := (i + 1) * shardLen
 		if endOffset < len(toShard) {
 			shards[i] = toShard[startOffset:endOffset]
 		} else {
 			shards[i] = toShard[startOffset:len(toShard)]
+			current_length := len(shards[i])
 			// Pad to make sure we can run a proper erasure coding
-			for j := len(toShard); j < endOffset; j++ {
+			for j := 0; j < (shardLen - current_length); j++ {
 				shards[i] = append(shards[i], 0)
 			}
 		}
