@@ -99,8 +99,8 @@ func AttemptedMine(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles
     	}
 
         potentialTicket := ProducePOR(minerKey, blockchainVal, storedFiles, numberSegments, seed)
-        if checkForWinningTicket(blockchainVal, TicketMarshal(potentialTicket), difficultyParam) {
-        	return TicketMarshal(potentialTicket)
+        if checkForWinningTicket(blockchainVal, potentialTicket, difficultyParam) {
+        	return potentialTicket
         }
     }
 
@@ -120,7 +120,7 @@ func VerifyMine(fileDigests *EncodedDataset, blockchainVal []byte, ticket []byte
 // by a miner if it fulfills the difficulty parameter. blockchainVal is equivalent to the blockchainVal described in AttemptedMine and
 // seed is a random value that makes the ticket effectively random (so that any group of transactions with at least one seed could be used
 // to produce a valid ticket)
-func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *EncodedDataset, k uint, seed []byte) Ticket {
+func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *EncodedDataset, k uint, seed []byte) []byte {
 	publicKeyAsBytes, error := x509.MarshalPKIXPublicKey(&minerKey.PublicKey)
 	if error != nil {
 		panic(error)
@@ -150,15 +150,15 @@ func ProducePOR(minerKey *ecdsa.PrivateKey, blockchainVal []byte, storedFiles *E
 		strShaRes = sha256.Sum256(hashStr)
 		currentFile = calculateFileIndex(strShaRes, int64(len(storedFiles.shards)))
 	}
-
-	return ticket 
-	/*
+    
+	//return ticket 
+	
 	finalTicket, err := json.Marshal(ticket)
 	if err != nil {
 		panic(err)
 	}
 	return finalTicket
-	*/
+	
 }
 
 // Takes in a ticket as a byte string and then parses it to produce a ticket object
@@ -198,9 +198,7 @@ func VerifyPOR(fileDigests *EncodedDataset , blockchainVal []byte, ticket []byte
 	hashStr := append(idStr, structuredTicket.Seed...)
 	shaRes := sha256.Sum256(hashStr)
 	currentFile := calculateFileIndex(shaRes, int64(len(fileDigests.shards)))
-	fmt.Printf("K is %v", k)
 	for i := 0; uint(i) < k; i++ {
-		fmt.Printf("As an integer %v at iteration: %v \n", len(structuredTicket.ProofFiles), i)
 
 		if len(structuredTicket.ProofFiles) <= i {
 			fmt.Printf("Length Proof Files: %v\n", len(structuredTicket.ProofFiles))

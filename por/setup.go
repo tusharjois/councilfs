@@ -72,16 +72,19 @@ func CreateErasureCoding(dataset []byte, r int, f int) (*EncodedDataset, error) 
 	shards := make([][]byte, numDataShards)
 	toShard := make([]byte, len(dataset))
 	copy(toShard, dataset)
+    fmt.Printf("Length of data set %v, Number of data shards %v, Shard Length %v", len(dataset), numDataShards, shardLen)
 
 	for i := range shards {
 		startOffset := (i) * shardLen
+		fmt.Printf("%v\n", startOffset)
 		endOffset := (i + 1) * shardLen
 		if endOffset < len(toShard) {
 			shards[i] = toShard[startOffset:endOffset]
 		} else {
 			shards[i] = toShard[startOffset:len(toShard)]
+			current_length := len(shards[i])
 			// Pad to make sure we can run a proper erasure coding
-			for j := len(toShard); j < endOffset; j++ {
+			for j := 0; j < (shardLen - current_length); j++ {
 				shards[i] = append(shards[i], 0)
 			}
 		}

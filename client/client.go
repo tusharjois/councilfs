@@ -217,7 +217,14 @@ func (pay *PaymentChannel) VerifyPOR(clientKey *ecdsa.PrivateKey, k uint) Channe
 	}
 	
 	if pay.Encoding != nil {
-		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, clientMsg, k) {
+		rawmsg := json.RawMessage(clientMsg)
+		var valuebytes []byte
+		err = json.Unmarshal(rawmsg, &valuebytes)
+		if err != nil {
+			panic(err)
+		}
+		if !por.VerifyPOR(pay.Encoding, pay.BlockchainState, valuebytes, k) {
+			print("Message failed to verify")
 			closeMessage := NewMessage(CloseChannel, make([]byte, 0), pay.ChannelID, clientKey, pay.Messages[len(pay.Messages)-1])
 			pay.UpdateMessages(closeMessage)
 			return *closeMessage

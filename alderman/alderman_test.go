@@ -4,6 +4,7 @@ import (
     "testing"
     "github.com/tusharjois/councilfs/client"
     "github.com/tusharjois/councilfs/por"
+    "reflect"
 )
 
 func NetworkFunctionality(pay *client.PaymentChannel, addMsg client.ChannelMessage) {
@@ -56,6 +57,23 @@ func TestClientAldermanInteraction(test *testing.T) {
     NetworkFunctionality(alderchannel, thirdCMsg)
 
     // make sure the communication channels have correct values
+    // make sure they agree
+    if len(alderchannel.Messages) != len(clientchannel.Messages) {
+        test.Errorf("Message channels are of differing length")
+    }
+    if !reflect.DeepEqual(alderchannel.Messages, clientchannel.Messages) {
+        test.Errorf("Message channels are not the same :( ")
+    }
+
+    if !reflect.DeepEqual(alderchannel, clientchannel) {
+        test.Errorf("Message channels are not the same :( ")
+    }
+
+    //for i := 0 ; i < len(alderchannel.Messages); i++ {
+    //    alder_msg := alderchannel.Messages[i]
+    //    client_msg := clientchannel.Messages[i]
+    //    if alder_msg.mType != client_msg:
+    //}
     alderchannel.DebugPrint()
     clientchannel.DebugPrint()
     return
