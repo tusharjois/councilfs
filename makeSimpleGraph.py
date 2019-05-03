@@ -15,6 +15,10 @@ for name in NAMES:
             Y.append(time)
         fig = plt.figure()
         plt.plot(X,Y)
+        if name == "verify":
+            plt.suptitle("Time vs Size Comparison for POR Verification")
+        else:
+            plt.suptitle("Time vs Size Comparison for Producing POR")
         plt.xlabel("Size of File (bytes)")
         plt.ylabel("Time to do POR calculation (sec)")
         plt.savefig(name + ".png")
