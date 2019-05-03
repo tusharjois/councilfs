@@ -13,7 +13,9 @@ for name in NAMES:
             file_byte_size = int(pair[1])
             X.append(file_byte_size)
             Y.append(time)
+        fig = plt.figure()
         plt.plot(X,Y)
-        plt.show()
+        plt.xlabel("Size of File (bytes)")
+        plt.ylabel("Time to do POR calculation (sec)")
         plt.savefig(name + ".png")
 

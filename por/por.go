@@ -217,7 +217,9 @@ func VerifyPOR(fileDigests *EncodedDataset , blockchainVal []byte, ticket []byte
         // the merkle proof right now is basically just a hash of the segment. 
         // so there are two ways to do this: have the verifier hold more information
         // or have the prover provide more information and the verifier do more computation
-		if !bytes.Equal(currFileInfo.MerkleProof, fileDigests.hashes[currentFile]) {
+        checkHash := sha256.Sum256(currFileInfo.FileSegment)
+		if !bytes.Equal(checkHash[:], fileDigests.hashes[currentFile]) {
+			panic("File segment of Verifier does not match Prover's file")
 			return false
 			//panic("File segment of Verifier does not match Prover's file")
 		}
