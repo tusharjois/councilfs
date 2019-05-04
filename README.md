@@ -2,7 +2,7 @@
 
 An Incentivized, Resilient File Distribution System, created for JHU Blockchains & Cryptocurrencies, Spring 2019.
 
-This code is a research proof-of-concept implementation of the PoR, alderman, and client aspects of our construction. **It is not intended for commercial use**.
+This code is a research proof-of-concept implementation of the PoR, alderman, and client aspects of our construction. **It is not intended for production use**.
 
 ## Installation 
 
@@ -11,6 +11,7 @@ This package is implemented in Go, and has been tested on version 1.12 of the Go
 Install the following Go package to your `$GOPATH`:
 
 ```sh
+go get github.com/klauspost/reedsolomon
 ```
 
 Then, prepare your `$GOPATH` for installation:
@@ -43,3 +44,4 @@ cd $GOPATH/github.com/tusharjois/councilfs
 go run main.go
 ```
 
+The file `makeSimpleGraph.py` contains data-viz routines for the benchmark.
