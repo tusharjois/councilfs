@@ -37,6 +37,8 @@ go test github.com/tusharjois/councilfs/por
 go test github.com/tusharjois/councilfs/aldermen
 ```
 
+Note that the `alderman` test includes tests for both the alderman and client portions. 
+
 To run the microbenchmark data generator, run the following:
 
 ```sh
