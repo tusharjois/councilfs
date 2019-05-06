@@ -9,17 +9,18 @@ for name in NAMES:
         Y = []
         for line in plot_coordinates:
             pair = line.split(" ")
-            time = float(pair[0][:-3])
-            file_byte_size = int(pair[1])
+            time = float(pair[0])
+            file_byte_size = long(pair[1])
             X.append(file_byte_size)
             Y.append(time)
         fig = plt.figure()
         plt.plot(X,Y)
         if name == "verify":
-            plt.suptitle("Time vs Size Comparison for POR Verification")
+            plt.suptitle("Time vs Number of Segments for POR Verification")
         else:
-            plt.suptitle("Time vs Size Comparison for Producing POR")
-        plt.xlabel("Size of File (bytes)")
+            plt.suptitle("Time vs Number of Segments for Producing POR")
+        plt.ticklabel_format(style='plain', axis='x')
+        plt.xlabel("Security parameter k")
         plt.ylabel("Time to do POR calculation (sec)")
         plt.savefig(name + ".png")
 
